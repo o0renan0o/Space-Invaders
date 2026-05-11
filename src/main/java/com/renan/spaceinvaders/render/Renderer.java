@@ -126,20 +126,24 @@ public final class Renderer {
         if (img == null) img = assets.get("alien_armored");
         int x = (int) boss.getX();
         int y = (int) boss.getY();
-        if (boss.isFlashing()) {
-            g.setColor(new Color(255, 255, 255, 220));
-            g.fillRect(x - 4, y - 4, GameConfig.BOSS_WIDTH + 8, GameConfig.BOSS_HEIGHT + 8);
-        }
         if (img != null) {
             g.drawImage(img, x, y, GameConfig.BOSS_WIDTH, GameConfig.BOSS_HEIGHT, null);
         } else {
             g.setColor(new Color(0xFF3333));
             g.fillRect(x, y, GameConfig.BOSS_WIDTH, GameConfig.BOSS_HEIGHT);
         }
+        if (boss.isFlashing()) {
+            g.setColor(new Color(255, 255, 255, 110));
+            g.fillRect(x, y, GameConfig.BOSS_WIDTH, GameConfig.BOSS_HEIGHT);
+        }
+    }
 
-        int barY = GameConfig.HEIGHT / 2 - 12;
-        int barW = GameConfig.WIDTH - 200;
+    private void drawBossHud(Graphics2D g) {
+        Boss boss = world.getBoss();
+        if (boss == null) return;
+        int barY = 40;
         int barX = 100;
+        int barW = GameConfig.WIDTH - 200;
         g.setColor(new Color(0, 0, 0, 180));
         g.fillRect(barX - 2, barY - 2, barW + 4, 14);
         g.setColor(new Color(0xFF3344));
@@ -286,6 +290,7 @@ public final class Renderer {
 
         drawCombo(g);
         drawActivePowerUps(g);
+        drawBossHud(g);
     }
 
     private void drawCombo(Graphics2D g) {

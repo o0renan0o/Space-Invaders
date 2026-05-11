@@ -152,6 +152,7 @@ public final class World {
             return;
         }
         for (Alien a : aliens) {
+            if (a.isDiving()) continue;
             if (a.getY() + GameConfig.ALIEN_HEIGHT >= GameConfig.ALIEN_GAME_OVER_Y) {
                 triggerGameOver(sounds);
                 return;
@@ -278,7 +279,7 @@ public final class World {
                 : GameConfig.ALIEN_H_SPACING;
         int totalWidth = cols * GameConfig.ALIEN_WIDTH + (cols - 1) * spacingH;
         int startX = (GameConfig.WIDTH - totalWidth) / 2;
-        int startY = GameConfig.ALIEN_START_Y + Math.min((wave - 1) * 6, 60);
+        int startY = computeAlienStartY(currentPhase, wave);
 
         boolean armored = currentPhase.has(Mechanic.ARMORED_FRONT_ROWS);
         for (int r = 0; r < rows; r++) {
@@ -331,11 +332,10 @@ public final class World {
                 * (1.0 + (1.0 - aliveFrac) * 2.5)
                 * slow;
         double dx = alienDirection * speed;
-        boolean drop = false;
-        if (maxX + dx > GameConfig.WIDTH - 4 || minX + dx < 4) {
-            drop = true;
-            alienDirection *= -1;
-        }
+        boolean hitRight = dx > 0 && maxX + dx > GameConfig.WIDTH - 4;
+        boolean hitLeft = dx < 0 && minX + dx < 4;
+        boolean drop = hitRight || hitLeft;
+        if (drop) alienDirection *= -1;
         for (Alien a : formationAliens) {
             if (drop) a.move(0, GameConfig.ALIEN_DROP);
             else a.move(dx, 0);
@@ -436,6 +436,16 @@ public final class World {
             max /= 3;
         }
         return min + rng.nextInt(Math.max(1, max - min));
+    }
+
+    public static int computeAlienStartY(Phase phase, int wave) {
+        int baseDrop = Math.min((wave - 1) * 6, 60);
+        int defaultY = GameConfig.ALIEN_START_Y + baseDrop;
+        if (phase.has(Mechanic.BOSS)) {
+            int belowBoss = GameConfig.BOSS_Y + GameConfig.BOSS_HEIGHT + 16;
+            return Math.max(belowBoss, defaultY);
+        }
+        return defaultY;
     }
 
     private int randomFireDelay() {
