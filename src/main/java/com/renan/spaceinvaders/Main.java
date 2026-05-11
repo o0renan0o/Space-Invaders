@@ -6,7 +6,6 @@ import com.renan.spaceinvaders.core.GameConfig;
 import com.renan.spaceinvaders.core.GameLoop;
 import com.renan.spaceinvaders.input.InputHandler;
 import com.renan.spaceinvaders.render.GamePanel;
-import com.renan.spaceinvaders.ui.HighScoreStore;
 import com.renan.spaceinvaders.world.World;
 
 import javax.swing.JFrame;
@@ -25,9 +24,8 @@ public final class Main {
     private static void launch() {
         AssetManager assets = new AssetManager();
         SoundManager sounds = new SoundManager();
-        HighScoreStore highScores = new HighScoreStore();
 
-        World world = new World(highScores.load());
+        World world = new World(0);
         InputHandler input = new InputHandler();
         GamePanel panel = new GamePanel(world, assets);
 
@@ -51,7 +49,7 @@ public final class Main {
 
         sounds.playMusic("music");
 
-        GameLoop loop = new GameLoop(world, input, panel, sounds, highScores, GameConfig.TICK_RATE);
+        GameLoop loop = new GameLoop(world, input, panel, sounds, GameConfig.TICK_RATE);
         loop.start();
     }
 

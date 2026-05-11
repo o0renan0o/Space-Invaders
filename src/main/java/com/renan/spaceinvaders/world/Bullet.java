@@ -10,21 +10,31 @@ public final class Bullet implements Entity {
 
     private double x;
     private double y;
+    private double vx;
     private final double vy;
     private final Side side;
     private boolean alive = true;
+    private boolean piercing;
+    private boolean splittable;
 
     public Bullet(double x, double y, double vy, Side side) {
+        this(x, y, 0, vy, side);
+    }
+
+    public Bullet(double x, double y, double vx, double vy, Side side) {
         this.x = x;
         this.y = y;
+        this.vx = vx;
         this.vy = vy;
         this.side = side;
     }
 
     public void update() {
         if (!alive) return;
+        x += vx;
         y += vy;
-        if (y < -GameConfig.BULLET_HEIGHT || y > GameConfig.HEIGHT + GameConfig.BULLET_HEIGHT) {
+        if (y < -GameConfig.BULLET_HEIGHT || y > GameConfig.HEIGHT + GameConfig.BULLET_HEIGHT
+                || x < -GameConfig.BULLET_WIDTH || x > GameConfig.WIDTH) {
             alive = false;
         }
     }
@@ -43,6 +53,32 @@ public final class Bullet implements Entity {
 
     public double getY() {
         return y;
+    }
+
+    public double getVy() {
+        return vy;
+    }
+
+    public double getVx() {
+        return vx;
+    }
+
+    public boolean isPiercing() {
+        return piercing;
+    }
+
+    public Bullet piercing() {
+        this.piercing = true;
+        return this;
+    }
+
+    public boolean isSplittable() {
+        return splittable;
+    }
+
+    public Bullet splittable() {
+        this.splittable = true;
+        return this;
     }
 
     @Override

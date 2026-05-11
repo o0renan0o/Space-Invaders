@@ -8,16 +8,23 @@ public final class Alien implements Entity {
 
     private final int row;
     private final int col;
+    private final AlienType type;
     private double x;
     private double y;
+    private int hp;
     private boolean alive = true;
     private int animFrame;
+    private boolean diving;
+    private double diveVx;
+    private double diveVy;
 
-    public Alien(int row, int col, double x, double y) {
+    public Alien(int row, int col, double x, double y, AlienType type) {
         this.row = row;
         this.col = col;
         this.x = x;
         this.y = y;
+        this.type = type;
+        this.hp = type.hp;
     }
 
     public void move(double dx, double dy) {
@@ -29,14 +36,38 @@ public final class Alien implements Entity {
         animFrame = (animFrame + 1) % 2;
     }
 
-    public void kill() {
-        alive = false;
+    public boolean hit() {
+        hp--;
+        if (hp <= 0) {
+            alive = false;
+            return true;
+        }
+        return false;
+    }
+
+    public void startDive(double vx, double vy) {
+        diving = true;
+        diveVx = vx;
+        diveVy = vy;
+    }
+
+    public void diveStep() {
+        if (!diving) return;
+        x += diveVx;
+        y += diveVy;
+        if (y > GameConfig.HEIGHT) alive = false;
+    }
+
+    public boolean isDiving() {
+        return diving;
+    }
+
+    public AlienType getType() {
+        return type;
     }
 
     public int scoreValue() {
-        if (row == 0) return GameConfig.SCORE_PER_ALIEN_ROW_0;
-        if (row == 1) return GameConfig.SCORE_PER_ALIEN_ROW_1;
-        return GameConfig.SCORE_PER_ALIEN_ROW_DEFAULT;
+        return type.score;
     }
 
     public int getRow() {
@@ -57,6 +88,10 @@ public final class Alien implements Entity {
 
     public int getAnimFrame() {
         return animFrame;
+    }
+
+    public int getHp() {
+        return hp;
     }
 
     @Override

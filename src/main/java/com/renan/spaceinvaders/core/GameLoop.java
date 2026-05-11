@@ -3,7 +3,6 @@ package com.renan.spaceinvaders.core;
 import com.renan.spaceinvaders.assets.SoundManager;
 import com.renan.spaceinvaders.input.InputHandler;
 import com.renan.spaceinvaders.render.GamePanel;
-import com.renan.spaceinvaders.ui.HighScoreStore;
 import com.renan.spaceinvaders.world.World;
 
 public final class GameLoop {
@@ -12,7 +11,6 @@ public final class GameLoop {
     private final InputHandler input;
     private final GamePanel panel;
     private final SoundManager sounds;
-    private final HighScoreStore highScores;
     private final double tickRate;
 
     private volatile boolean running;
@@ -22,13 +20,11 @@ public final class GameLoop {
                     InputHandler input,
                     GamePanel panel,
                     SoundManager sounds,
-                    HighScoreStore highScores,
                     double tickRate) {
         this.world = world;
         this.input = input;
         this.panel = panel;
         this.sounds = sounds;
-        this.highScores = highScores;
         this.tickRate = tickRate;
     }
 
@@ -48,7 +44,6 @@ public final class GameLoop {
         final double nsPerTick = 1_000_000_000.0 / tickRate;
         long last = System.nanoTime();
         double delta = 0;
-        int previousHighScore = highScores.load();
 
         while (running) {
             long now = System.nanoTime();
@@ -66,14 +61,7 @@ public final class GameLoop {
                 }
             }
 
-            if (updated) {
-                if (world.getScore() > previousHighScore) {
-                    previousHighScore = world.getScore();
-                    highScores.save(previousHighScore);
-                    world.setHighScore(previousHighScore);
-                }
-                panel.repaint();
-            }
+            if (updated) panel.repaint();
 
             try {
                 Thread.sleep(2);

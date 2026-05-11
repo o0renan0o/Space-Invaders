@@ -8,52 +8,90 @@ public final class GameConfig {
     public static final double TICK_RATE = 60.0;
 
     public static final int PLAYER_LIVES = 3;
-    public static final int PLAYER_WIDTH = 46;
-    public static final int PLAYER_HEIGHT = 28;
+    public static final int PLAYER_MAX_LIVES = 5;
+    public static final int PLAYER_WIDTH = 60;
+    public static final int PLAYER_HEIGHT = 30;
     public static final int PLAYER_Y = HEIGHT - 60;
-    public static final double PLAYER_SPEED = 4.0;
+    public static final double PLAYER_SPEED = 4.5;
     public static final int PLAYER_FIRE_COOLDOWN_TICKS = 18;
     public static final int RESPAWN_INVULN_TICKS = 90;
 
-    public static final int BULLET_WIDTH = 3;
-    public static final int BULLET_HEIGHT = 12;
-    public static final double PLAYER_BULLET_SPEED = 8.0;
+    public static final int BULLET_WIDTH = 4;
+    public static final int BULLET_HEIGHT = 14;
+    public static final double PLAYER_BULLET_SPEED = 8.5;
     public static final double ALIEN_BULLET_SPEED = 3.5;
 
     public static final int ALIEN_ROWS = 5;
     public static final int ALIEN_COLS = 10;
     public static final int ALIEN_WIDTH = 40;
-    public static final int ALIEN_HEIGHT = 28;
-    public static final int ALIEN_H_SPACING = 18;
-    public static final int ALIEN_V_SPACING = 16;
+    public static final int ALIEN_HEIGHT = 32;
+    public static final int ALIEN_H_SPACING = 16;
+    public static final int ALIEN_V_SPACING = 12;
     public static final int ALIEN_START_Y = 70;
-    public static final double ALIEN_START_SPEED = 0.6;
-    public static final double ALIEN_SPEED_RAMP = 0.06;
+    public static final double ALIEN_START_SPEED = 0.5;
     public static final int ALIEN_DROP = 14;
-    public static final int ALIEN_FIRE_MIN_TICKS = 40;
+    public static final int ALIEN_FIRE_MIN_TICKS = 35;
     public static final int ALIEN_FIRE_MAX_TICKS = 110;
     public static final int ALIEN_FRAME_TICKS = 30;
     public static final int ALIEN_GAME_OVER_Y = PLAYER_Y - 8;
 
+    public static final int DIVER_FIRE_CHANCE_PCT = 1;
+    public static final double DIVER_SPEED = 3.2;
+
     public static final int SHIELD_COUNT = 4;
-    public static final int SHIELD_Y = HEIGHT - 140;
+    public static final int SHIELD_Y = HEIGHT - 150;
     public static final int SHIELD_CELL = 4;
     public static final int SHIELD_COLS = 22;
-    public static final int SHIELD_ROWS = 12;
+    public static final int SHIELD_ROWS = 14;
 
     public static final int UFO_Y = 30;
     public static final double UFO_SPEED = 2.0;
-    public static final int UFO_WIDTH = 56;
-    public static final int UFO_HEIGHT = 22;
-    public static final int UFO_MIN_INTERVAL_TICKS = 60 * 15;
-    public static final int UFO_MAX_INTERVAL_TICKS = 60 * 30;
+    public static final int UFO_WIDTH = 80;
+    public static final int UFO_HEIGHT = 36;
+    public static final int UFO_MIN_INTERVAL_TICKS = 60 * 12;
+    public static final int UFO_MAX_INTERVAL_TICKS = 60 * 25;
     public static final int UFO_SCORE = 150;
+
+    public static final int EXPLOSION_TICKS = 24;
+    public static final int EXPLOSION_FRAMES = 16;
+    public static final int PARTICLES_PER_EXPLOSION = 14;
+    public static final int PARTICLE_LIFE = 28;
+
+    public static final int COMBO_WINDOW_TICKS = 90;
+    public static final int COMBO_MAX_MULTIPLIER = 8;
+    public static final int COMBO_BREAK_PENALTY = 0;
+
+    public static final int POPUP_LIFETIME = 45;
+    public static final int POPUP_RISE_PX = 25;
+
+    public static final double POWERUP_DROP_CHANCE = 0.12;
+    public static final double POWERUP_FALL_SPEED = 2.0;
+    public static final int POWERUP_SIZE = 26;
+    public static final int POWERUP_DURATION_TICKS = 60 * 10;
+    public static final int RAPID_FIRE_COOLDOWN = 6;
+
+    public static final int[] SCORE_REWARD_THRESHOLDS = {1000, 2500, 5000, 10000, 25000};
+
+    public static final int CAMERA_SHAKE_HIT = 12;
+    public static final int CAMERA_SHAKE_BOSS = 20;
+    public static final int CAMERA_SHAKE_PLAYER = 18;
+
+    public static final int STARFIELD_LAYERS = 3;
+    public static final int STARS_PER_LAYER = 40;
+
+    public static final int BOSS_HP_BASE = 30;
+    public static final int BOSS_SCORE = 1000;
+    public static final int BOSS_FIRE_INTERVAL = 35;
+    public static final double BOSS_SPEED = 1.4;
+    public static final int BOSS_WIDTH = 160;
+    public static final int BOSS_HEIGHT = 80;
+    public static final int BOSS_Y = 60;
+
+    public static final int HALL_OF_FAME_SIZE = 10;
 
     public static final int SCORE_PER_ALIEN_ROW_0 = 30;
     public static final int SCORE_PER_ALIEN_ROW_1 = 20;
     public static final int SCORE_PER_ALIEN_ROW_DEFAULT = 10;
-
-    public static final int EXPLOSION_TICKS = 18;
 
     private GameConfig() {
     }

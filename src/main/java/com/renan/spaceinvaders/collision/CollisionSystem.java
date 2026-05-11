@@ -3,14 +3,15 @@ package com.renan.spaceinvaders.collision;
 import com.renan.spaceinvaders.assets.SoundManager;
 import com.renan.spaceinvaders.core.GameConfig;
 import com.renan.spaceinvaders.world.Alien;
+import com.renan.spaceinvaders.world.Boss;
 import com.renan.spaceinvaders.world.Bullet;
 import com.renan.spaceinvaders.world.Player;
+import com.renan.spaceinvaders.world.PowerUp;
 import com.renan.spaceinvaders.world.Shield;
 import com.renan.spaceinvaders.world.Ufo;
 import com.renan.spaceinvaders.world.World;
 
 import java.awt.Rectangle;
-import java.util.Iterator;
 import java.util.List;
 
 public final class CollisionSystem {
@@ -21,19 +22,23 @@ public final class CollisionSystem {
     public static void handle(World world, SoundManager sounds) {
         handleBulletsVsShields(world);
         handleBulletsVsAliens(world, sounds);
+        handleBulletsVsBoss(world, sounds);
         handleBulletsVsUfo(world, sounds);
         handleBulletsVsPlayer(world, sounds);
+        handlePlayerVsPowerUps(world);
         handleAliensVsShields(world);
+        handleAliensVsPlayer(world, sounds);
     }
 
     private static void handleBulletsVsShields(World world) {
-        Iterator<Bullet> it = world.getBullets().iterator();
-        while (it.hasNext()) {
-            Bullet b = it.next();
+        for (Bullet b : world.getBullets()) {
             if (!b.isAlive()) continue;
             Rectangle bb = b.getBounds();
             for (Shield s : world.getShields()) {
                 if (s.handleHit(bb, b.getSide())) {
+                    if (b.isSplittable()) {
+                        world.onShieldHitBySplittable(b.getX(), b.getY());
+                    }
                     b.kill();
                     break;
                 }
@@ -49,17 +54,37 @@ public final class CollisionSystem {
             Rectangle bb = b.getBounds();
             for (Alien a : aliens) {
                 if (!a.isAlive()) continue;
-                if (a.getBounds().intersects(bb)) {
-                    a.kill();
+                if (!a.getBounds().intersects(bb)) continue;
+                boolean killed = a.hit();
+                if (killed) {
+                    world.onAlienKilled(a, sounds);
+                } else {
+                    world.addPopup((int) a.getX(), (int) a.getY(), "!", java.awt.Color.WHITE);
+                }
+                if (!b.isPiercing()) {
                     b.kill();
-                    world.addScore(a.scoreValue());
-                    world.spawnExplosion((int) a.getX(), (int) a.getY());
-                    sounds.play("alien_died");
                     break;
                 }
             }
         }
         aliens.removeIf(a -> !a.isAlive());
+    }
+
+    private static void handleBulletsVsBoss(World world, SoundManager sounds) {
+        Boss boss = world.getBoss();
+        if (boss == null || !boss.isAlive()) return;
+        Rectangle bb = boss.getBounds();
+        for (Bullet b : world.getBullets()) {
+            if (!b.isAlive() || b.getSide() != Bullet.Side.PLAYER) continue;
+            if (b.getBounds().intersects(bb)) {
+                boolean dead = boss.hit(1);
+                if (dead) {
+                    world.onBossKilled(boss, sounds);
+                }
+                if (!b.isPiercing()) b.kill();
+                if (dead) break;
+            }
+        }
     }
 
     private static void handleBulletsVsUfo(World world, SoundManager sounds) {
@@ -70,11 +95,8 @@ public final class CollisionSystem {
             if (!b.isAlive() || b.getSide() != Bullet.Side.PLAYER) continue;
             if (b.getBounds().intersects(ub)) {
                 ufo.kill();
-                b.kill();
-                world.addScore(GameConfig.UFO_SCORE);
-                world.spawnExplosion((int) ufo.getX(), (int) ufo.getY());
-                sounds.play("alien_died");
-                world.clearUfo();
+                if (!b.isPiercing()) b.kill();
+                world.onUfoKilled(ufo, sounds);
                 return;
             }
         }
@@ -89,10 +111,21 @@ public final class CollisionSystem {
             if (b.getBounds().intersects(pb)) {
                 b.kill();
                 if (player.hit()) {
-                    world.spawnExplosion((int) player.getX(), (int) player.getY());
-                    sounds.play("player_died");
+                    world.onPlayerHit(sounds);
                 }
                 return;
+            }
+        }
+    }
+
+    private static void handlePlayerVsPowerUps(World world) {
+        Player player = world.getPlayer();
+        Rectangle pb = player.getBounds();
+        for (PowerUp pu : world.getPowerUps()) {
+            if (!pu.isAlive()) continue;
+            if (pu.getBounds().intersects(pb)) {
+                pu.collect();
+                world.onPowerUpCollected(pu);
             }
         }
     }
@@ -117,5 +150,19 @@ public final class CollisionSystem {
             }
         }
         world.getShields().removeIf(s -> !s.isAlive());
+    }
+
+    private static void handleAliensVsPlayer(World world, SoundManager sounds) {
+        Player player = world.getPlayer();
+        if (player.isInvulnerable()) return;
+        Rectangle pb = player.getBounds();
+        for (Alien a : world.getAliens()) {
+            if (!a.isDiving()) continue;
+            if (a.getBounds().intersects(pb)) {
+                a.hit();
+                if (player.hit()) world.onPlayerHit(sounds);
+                return;
+            }
+        }
     }
 }

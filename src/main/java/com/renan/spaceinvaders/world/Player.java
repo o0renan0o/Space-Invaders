@@ -3,6 +3,8 @@ package com.renan.spaceinvaders.world;
 import com.renan.spaceinvaders.core.GameConfig;
 
 import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class Player implements Entity {
 
@@ -11,23 +13,27 @@ public final class Player implements Entity {
     private int lives;
     private int fireCooldown;
     private int invulnTicks;
+    private int initialLives;
 
     public Player() {
-        reset();
+        this(GameConfig.PLAYER_LIVES);
+    }
+
+    public Player(int startingLives) {
+        this.initialLives = startingLives;
         this.y = GameConfig.PLAYER_Y;
+        reset();
     }
 
     public void reset() {
         this.x = (GameConfig.WIDTH - GameConfig.PLAYER_WIDTH) / 2.0;
-        this.lives = GameConfig.PLAYER_LIVES;
+        this.lives = initialLives;
         this.fireCooldown = 0;
         this.invulnTicks = GameConfig.RESPAWN_INVULN_TICKS;
     }
 
-    public void respawn() {
-        this.x = (GameConfig.WIDTH - GameConfig.PLAYER_WIDTH) / 2.0;
-        this.fireCooldown = 0;
-        this.invulnTicks = GameConfig.RESPAWN_INVULN_TICKS;
+    public void setStartingLives(int lives) {
+        this.initialLives = lives;
     }
 
     public void moveLeft() {
@@ -46,11 +52,31 @@ public final class Player implements Entity {
         return fireCooldown <= 0;
     }
 
-    public Bullet fire() {
-        fireCooldown = GameConfig.PLAYER_FIRE_COOLDOWN_TICKS;
-        double bx = x + (GameConfig.PLAYER_WIDTH - GameConfig.BULLET_WIDTH) / 2.0;
+    public List<Bullet> fire(ActivePowerUps active) {
+        fireCooldown = active.isActive(PowerUpType.RAPID_FIRE)
+                ? GameConfig.RAPID_FIRE_COOLDOWN
+                : GameConfig.PLAYER_FIRE_COOLDOWN_TICKS;
+        List<Bullet> out = new ArrayList<>();
         double by = y - GameConfig.BULLET_HEIGHT;
-        return new Bullet(bx, by, -GameConfig.PLAYER_BULLET_SPEED, Bullet.Side.PLAYER);
+        boolean piercing = active.isActive(PowerUpType.PIERCING);
+        if (active.isActive(PowerUpType.DOUBLE_SHOT)) {
+            double left = x + 8;
+            double right = x + GameConfig.PLAYER_WIDTH - 8 - GameConfig.BULLET_WIDTH;
+            Bullet b1 = new Bullet(left, by, -GameConfig.PLAYER_BULLET_SPEED, Bullet.Side.PLAYER);
+            Bullet b2 = new Bullet(right, by, -GameConfig.PLAYER_BULLET_SPEED, Bullet.Side.PLAYER);
+            if (piercing) {
+                b1.piercing();
+                b2.piercing();
+            }
+            out.add(b1);
+            out.add(b2);
+        } else {
+            double bx = x + (GameConfig.PLAYER_WIDTH - GameConfig.BULLET_WIDTH) / 2.0;
+            Bullet b = new Bullet(bx, by, -GameConfig.PLAYER_BULLET_SPEED, Bullet.Side.PLAYER);
+            if (piercing) b.piercing();
+            out.add(b);
+        }
+        return out;
     }
 
     public void tick() {
@@ -71,6 +97,10 @@ public final class Player implements Entity {
 
     public int getLives() {
         return lives;
+    }
+
+    public void addLife() {
+        if (lives < GameConfig.PLAYER_MAX_LIVES) lives++;
     }
 
     public double getX() {
