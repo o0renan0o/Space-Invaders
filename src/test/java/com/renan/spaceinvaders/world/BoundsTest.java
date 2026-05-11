@@ -134,6 +134,33 @@ class BoundsTest {
     }
 
     @Test
+    void statusBarOccupiesBottomStrip() {
+        assertEquals(GameConfig.HEIGHT, GameConfig.STBAR_TOP + GameConfig.STBAR_HEIGHT);
+    }
+
+    @Test
+    void playerStaysAboveStatusBar() {
+        int playerBottom = GameConfig.PLAYER_Y + GameConfig.PLAYER_HEIGHT;
+        assertTrue(playerBottom <= GameConfig.STBAR_TOP,
+                "player bottom " + playerBottom
+                        + " must not enter STBAR top " + GameConfig.STBAR_TOP);
+    }
+
+    @Test
+    void shieldsStayAboveStatusBar() {
+        int shieldBottom = GameConfig.SHIELD_Y
+                + GameConfig.SHIELD_ROWS * GameConfig.SHIELD_CELL;
+        assertTrue(shieldBottom <= GameConfig.STBAR_TOP,
+                "shield bottom " + shieldBottom
+                        + " must not enter STBAR top " + GameConfig.STBAR_TOP);
+    }
+
+    @Test
+    void alienGameOverYAboveStatusBar() {
+        assertTrue(GameConfig.ALIEN_GAME_OVER_Y < GameConfig.STBAR_TOP);
+    }
+
+    @Test
     void shieldsSitBetweenAliensAndPlayer() {
         int shieldBottom = GameConfig.SHIELD_Y
                 + GameConfig.SHIELD_ROWS * GameConfig.SHIELD_CELL;

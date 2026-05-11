@@ -94,6 +94,24 @@ multiplier (max ×8). Score earned per kill is multiplied accordingly.
 Top 10 scores are persisted to `~/.spaceinvaders/hof` with 3-letter
 arcade-style initials.
 
+## Status bar (Doom STBAR)
+
+A 70 px strip across the bottom of the screen unifies every HUD element
+into five regions, matching the layout of the original Doom STBAR:
+
+```
+┌────────┬──────────┬────────┬──────────┬─────────────┐
+│ SCORE  │ WAVE  N  │        │ COMBO    │ POWER-UPS   │
+│ 000123 │ NAME     │ COCKPIT│ x4 ━━━━  │ ▤ ▤ ▤ ▤     │
+│ HI     │ LIVES x3 │  FACE  │          │ ▒▒░ ▓░ ▓▒░  │
+│ 005000 │ ▲ ▲ ▲    │        │ DIFFICULTY│ RAPID DOUBLE│
+└────────┴──────────┴────────┴──────────┴─────────────┘
+```
+
+The playfield shrinks to 530 px tall (HEIGHT - STBAR_HEIGHT). Player,
+shields and the alien game-over line all move up to stay above the
+bar. Boss HP bar stays floating at the top of the screen.
+
 ## Doom face HUD
 
 A nostalgic Doom-style STBAR face sits inside the ship cockpit at the top-right.

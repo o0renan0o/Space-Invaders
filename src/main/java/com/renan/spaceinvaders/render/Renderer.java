@@ -1,7 +1,6 @@
 package com.renan.spaceinvaders.render;
 
 import com.renan.spaceinvaders.assets.AssetManager;
-import com.renan.spaceinvaders.core.Difficulty;
 import com.renan.spaceinvaders.core.GameConfig;
 import com.renan.spaceinvaders.core.GameState;
 import com.renan.spaceinvaders.ui.FaceState;
@@ -28,7 +27,6 @@ import java.awt.Polygon;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.List;
-import java.util.Map;
 
 public final class Renderer {
 
@@ -297,50 +295,94 @@ public final class Renderer {
     }
 
     private void drawHud(Graphics2D g) {
-        g.setFont(hudFont);
-        g.setColor(WHITE);
-        g.drawString("SCORE " + pad(world.getScore(), 6), 16, 22);
-        String hi = "HI " + pad(world.getHighScore(), 6);
-        int hiWidth = g.getFontMetrics().stringWidth(hi);
-        g.drawString(hi, GameConfig.WIDTH / 2 - hiWidth / 2, 22);
-        String wave = "WAVE " + world.getWave() + "  " + world.getCurrentPhase().name();
-        int waveWidth = g.getFontMetrics().stringWidth(wave);
-        g.drawString(wave, GameConfig.WIDTH - 16 - waveWidth, 22);
-
-        Player p = world.getPlayer();
-        for (int i = 0; i < p.getLives() - 1; i++) {
-            drawShip(g, 16 + i * (GameConfig.PLAYER_WIDTH / 2 + 4),
-                    GameConfig.HEIGHT - GameConfig.PLAYER_HEIGHT / 2 - 8,
-                    GameConfig.PLAYER_WIDTH / 2, GameConfig.PLAYER_HEIGHT / 2);
-        }
-        g.setColor(new Color(0, 200, 80));
-        g.fillRect(0, GameConfig.HEIGHT - 4, GameConfig.WIDTH, 2);
-
-        drawCombo(g);
-        drawActivePowerUps(g);
+        drawStatusBar(g);
         drawBossHud(g);
-        drawDoomFace(g);
     }
 
-    private void drawDoomFace(Graphics2D g) {
+    private void drawStatusBar(Graphics2D g) {
+        int top = GameConfig.STBAR_TOP;
+        int height = GameConfig.STBAR_HEIGHT;
+
+        g.setColor(new Color(14, 14, 30));
+        g.fillRect(0, top, GameConfig.WIDTH, height);
+
+        g.setColor(new Color(80, 200, 100));
+        g.fillRect(0, top - 1, GameConfig.WIDTH, 2);
+        g.setColor(new Color(40, 100, 60));
+        g.fillRect(0, top + 3, GameConfig.WIDTH, 1);
+        g.fillRect(0, top + height - 4, GameConfig.WIDTH, 1);
+
+        int[] regionEdges = {170, 340, 460, 620};
+        g.setColor(new Color(60, 60, 100));
+        for (int x : regionEdges) g.fillRect(x, top + 6, 1, height - 12);
+
+        drawScoreRegion(g, 0, 170, top, height);
+        drawWaveRegion(g, 170, 170, top, height);
+        drawCockpitRegion(g, 340, 120, top, height);
+        drawComboRegion(g, 460, 160, top, height);
+        drawPowerUpsRegion(g, 620, 180, top, height);
+    }
+
+    private void drawScoreRegion(Graphics2D g, int x, int w, int top, int height) {
+        g.setFont(smallFont);
+        g.setColor(new Color(120, 200, 255));
+        g.drawString("SCORE", x + 12, top + 18);
+        g.setFont(hudFont);
+        g.setColor(YELLOW);
+        g.drawString(pad(world.getScore(), 6), x + 12, top + 38);
+        g.setFont(smallFont);
+        g.setColor(new Color(120, 200, 255));
+        g.drawString("HI", x + 12, top + 54);
+        g.setColor(new Color(255, 220, 120));
+        g.drawString(pad(world.getHighScore(), 6), x + 36, top + 54);
+    }
+
+    private void drawWaveRegion(Graphics2D g, int x, int w, int top, int height) {
+        g.setFont(smallFont);
+        g.setColor(new Color(120, 200, 255));
+        g.drawString("WAVE", x + 12, top + 18);
+        g.setFont(hudFont);
+        g.setColor(CYAN);
+        g.drawString(Integer.toString(world.getWave()), x + 60, top + 18);
+        g.setFont(smallFont);
+        g.setColor(YELLOW);
+        String name = world.getCurrentPhase().name();
+        if (name.length() > 18) name = name.substring(0, 18);
+        g.drawString(name, x + 12, top + 36);
+
+        g.setColor(new Color(120, 200, 255));
+        g.drawString("LIVES", x + 12, top + 56);
+        g.setFont(hudFont);
+        g.setColor(WHITE);
+        int lives = Math.max(0, world.getPlayer().getLives());
+        g.drawString("x" + lives, x + 52, top + 56);
+
+        int iconY = top + 46;
+        int iconSize = 14;
+        for (int i = 0; i < Math.min(lives, 5); i++) {
+            drawShip(g, x + 86 + i * (iconSize + 2), iconY, iconSize, iconSize / 2 + 1);
+        }
+    }
+
+    private void drawCockpitRegion(Graphics2D g, int x, int w, int top, int height) {
         int cockpitW = 100;
-        int cockpitH = 92;
-        int cockpitX = GameConfig.WIDTH - cockpitW - 12;
-        int cockpitY = 32;
+        int cockpitH = height - 8;
+        int cockpitX = x + (w - cockpitW) / 2;
+        int cockpitY = top + 4;
         BufferedImage cockpit = assets.get("cockpit");
         if (cockpit != null) {
             g.drawImage(cockpit, cockpitX, cockpitY, cockpitW, cockpitH, null);
         } else {
-            g.setColor(new Color(40, 40, 60));
+            g.setColor(new Color(40, 30, 60));
             g.fillRect(cockpitX, cockpitY, cockpitW, cockpitH);
             g.setColor(new Color(100, 100, 140));
             g.drawRect(cockpitX, cockpitY, cockpitW, cockpitH);
         }
 
-        FaceState state = world.getFaceController().compute(
+        com.renan.spaceinvaders.ui.FaceState state = world.getFaceController().compute(
                 world.getState(), world.getPlayer().getLives());
         BufferedImage face = assets.get(state.spriteKey);
-        int faceSize = 60;
+        int faceSize = Math.min(cockpitW - 24, cockpitH - 10);
         int faceX = cockpitX + (cockpitW - faceSize) / 2;
         int faceY = cockpitY + (cockpitH - faceSize) / 2;
         if (face != null) {
@@ -353,62 +395,75 @@ public final class Renderer {
         int lives = Math.max(0, world.getPlayer().getLives());
         int startingLives = Math.max(1, world.getDifficulty().startingLives);
         double damage = 1.0 - (lives / (double) startingLives);
-        if (damage > 0 && state != FaceState.DEAD) {
+        if (damage > 0 && state != com.renan.spaceinvaders.ui.FaceState.DEAD) {
             int alpha = (int) Math.min(140, damage * 130);
             g.setColor(new Color(255, 40, 40, alpha));
             g.fillRect(faceX, faceY, faceSize, faceSize);
         }
-
-        g.setFont(smallFont);
-        g.setColor(WHITE);
-        String livesText = "x" + lives;
-        int tw = g.getFontMetrics().stringWidth(livesText);
-        g.drawString(livesText, cockpitX + cockpitW - tw - 6, cockpitY + cockpitH - 6);
     }
 
-    private void drawCombo(Graphics2D g) {
+    private void drawComboRegion(Graphics2D g, int x, int w, int top, int height) {
+        g.setFont(smallFont);
+        g.setColor(new Color(120, 200, 255));
+        g.drawString("COMBO", x + 12, top + 18);
+
         int mult = world.getCombo().getMultiplier();
-        if (mult <= 1) return;
-        g.setFont(mediumFont);
-        Color color = mult >= 4 ? YELLOW : WHITE;
-        g.setColor(color);
-        String text = "COMBO x" + mult;
-        int tw = g.getFontMetrics().stringWidth(text);
-        int x = GameConfig.WIDTH - tw - 16;
-        int y = 50;
-        g.drawString(text, x, y);
-        int barW = 100;
-        int barX = GameConfig.WIDTH - barW - 16;
-        int barY = y + 6;
-        g.setColor(new Color(60, 60, 60));
-        g.fillRect(barX, barY, barW, 4);
-        g.setColor(color);
-        g.fillRect(barX, barY, (int) (barW * world.getCombo().getWindowFraction()), 4);
+        Color comboColor = mult >= 4 ? YELLOW : (mult > 1 ? WHITE : new Color(120, 120, 140));
+        g.setFont(hudFont);
+        g.setColor(comboColor);
+        g.drawString("x" + mult, x + 60, top + 22);
+
+        int barX = x + 12;
+        int barY = top + 32;
+        int barW = w - 24;
+        g.setColor(new Color(40, 40, 60));
+        g.fillRect(barX, barY, barW, 6);
+        g.setColor(comboColor);
+        g.fillRect(barX, barY, (int) (barW * world.getCombo().getWindowFraction()), 6);
+
+        g.setFont(smallFont);
+        g.setColor(new Color(120, 200, 255));
+        g.drawString("DIFFICULTY", x + 12, top + 52);
+        g.setColor(YELLOW);
+        g.drawString(world.getDifficulty().label, x + 86, top + 52);
     }
 
-    private void drawActivePowerUps(Graphics2D g) {
-        Map<PowerUpType, Integer> active = world.getActivePowerUps().snapshot();
-        if (active.isEmpty()) return;
-        int x = GameConfig.WIDTH - 80;
-        int y = GameConfig.HEIGHT - 90;
+    private void drawPowerUpsRegion(Graphics2D g, int x, int w, int top, int height) {
         g.setFont(smallFont);
-        for (Map.Entry<PowerUpType, Integer> e : active.entrySet()) {
-            PowerUpType t = e.getKey();
+        g.setColor(new Color(120, 200, 255));
+        g.drawString("POWER-UPS", x + 12, top + 18);
+
+        var active = world.getActivePowerUps().snapshot();
+        if (active.isEmpty()) {
+            g.setColor(new Color(80, 80, 100));
+            g.drawString("(none)", x + 12, top + 42);
+            return;
+        }
+
+        int slotW = 30;
+        int slotX = x + 12;
+        int slotY = top + 24;
+        for (var e : active.entrySet()) {
+            com.renan.spaceinvaders.world.PowerUpType t = e.getKey();
             BufferedImage img = assets.get(t.spriteKey);
             if (img != null) {
-                g.drawImage(img, x, y, 20, 20, null);
+                g.drawImage(img, slotX, slotY, 24, 24, null);
             } else {
                 g.setColor(t.color);
-                g.fillRect(x, y, 20, 20);
+                g.fillRect(slotX, slotY, 24, 24);
             }
-            g.setColor(WHITE);
-            g.drawString(t.label, x + 24, y + 10);
             float frac = world.getActivePowerUps().fractionLeft(t);
-            g.setColor(new Color(60, 60, 60));
-            g.fillRect(x + 24, y + 14, 50, 3);
+            g.setColor(new Color(40, 40, 60));
+            g.fillRect(slotX, slotY + 26, 24, 3);
             g.setColor(t.color);
-            g.fillRect(x + 24, y + 14, (int) (50 * frac), 3);
-            y += 24;
+            g.fillRect(slotX, slotY + 26, (int) (24 * frac), 3);
+            g.setFont(smallFont);
+            g.setColor(new Color(200, 200, 220));
+            String label = t.label.length() > 6 ? t.label.substring(0, 6) : t.label;
+            int lw = g.getFontMetrics().stringWidth(label);
+            g.drawString(label, slotX + 12 - lw / 2, slotY + 40);
+            slotX += slotW + 6;
+            if (slotX + slotW > x + w) break;
         }
     }
 

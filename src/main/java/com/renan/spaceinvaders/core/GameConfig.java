@@ -4,6 +4,8 @@ public final class GameConfig {
 
     public static final int WIDTH = 800;
     public static final int HEIGHT = 600;
+    public static final int STBAR_HEIGHT = 70;
+    public static final int STBAR_TOP = HEIGHT - STBAR_HEIGHT;
 
     public static final double TICK_RATE = 60.0;
 
@@ -11,7 +13,7 @@ public final class GameConfig {
     public static final int PLAYER_MAX_LIVES = 5;
     public static final int PLAYER_WIDTH = 60;
     public static final int PLAYER_HEIGHT = 30;
-    public static final int PLAYER_Y = HEIGHT - 60;
+    public static final int PLAYER_Y = STBAR_TOP - 38;
     public static final double PLAYER_SPEED = 4.5;
     public static final int PLAYER_FIRE_COOLDOWN_TICKS = 18;
     public static final int RESPAWN_INVULN_TICKS = 90;
@@ -39,7 +41,7 @@ public final class GameConfig {
     public static final double DIVER_SPEED = 3.2;
 
     public static final int SHIELD_COUNT = 4;
-    public static final int SHIELD_Y = HEIGHT - 150;
+    public static final int SHIELD_Y = STBAR_TOP - 124;
     public static final int SHIELD_CELL = 4;
     public static final int SHIELD_COLS = 22;
     public static final int SHIELD_ROWS = 14;
