@@ -37,7 +37,11 @@ public final class Alien implements Entity {
     }
 
     public boolean hit() {
-        hp--;
+        return hit(1);
+    }
+
+    public boolean hit(int damage) {
+        hp -= damage;
         if (hp <= 0) {
             alive = false;
             return true;

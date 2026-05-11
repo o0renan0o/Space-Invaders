@@ -79,6 +79,16 @@ public final class Player implements Entity {
         return out;
     }
 
+    public Bullet fireCharged() {
+        fireCooldown = GameConfig.PLAYER_FIRE_COOLDOWN_TICKS;
+        double bx = x + (GameConfig.PLAYER_WIDTH - GameConfig.CHARGE_BULLET_WIDTH) / 2.0;
+        double by = y - GameConfig.CHARGE_BULLET_HEIGHT;
+        return new Bullet(bx, by, -GameConfig.PLAYER_BULLET_SPEED * 1.1, Bullet.Side.PLAYER)
+                .piercing()
+                .withDamage(GameConfig.CHARGE_BULLET_DAMAGE)
+                .withSize(GameConfig.CHARGE_BULLET_WIDTH, GameConfig.CHARGE_BULLET_HEIGHT);
+    }
+
     public void tick() {
         if (fireCooldown > 0) fireCooldown--;
         if (invulnTicks > 0) invulnTicks--;

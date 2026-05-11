@@ -55,7 +55,7 @@ public final class CollisionSystem {
             for (Alien a : aliens) {
                 if (!a.isAlive()) continue;
                 if (!a.getBounds().intersects(bb)) continue;
-                boolean killed = a.hit();
+                boolean killed = a.hit(b.getDamage());
                 if (killed) {
                     world.onAlienKilled(a, sounds);
                 } else {
@@ -77,7 +77,7 @@ public final class CollisionSystem {
         for (Bullet b : world.getBullets()) {
             if (!b.isAlive() || b.getSide() != Bullet.Side.PLAYER) continue;
             if (b.getBounds().intersects(bb)) {
-                boolean dead = boss.hit(1);
+                boolean dead = boss.hit(b.getDamage());
                 if (dead) {
                     world.onBossKilled(boss, sounds);
                 }

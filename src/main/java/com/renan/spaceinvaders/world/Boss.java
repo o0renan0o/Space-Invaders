@@ -74,6 +74,31 @@ public final class Boss implements Entity {
         return hitFlashTicks > 0;
     }
 
+    public int pattern() {
+        double frac = hp / (double) maxHp;
+        if (frac > GameConfig.BOSS_PATTERN_2_HP_FRACTION) return 1;
+        if (frac > GameConfig.BOSS_PATTERN_3_HP_FRACTION) return 2;
+        return 3;
+    }
+
+    public int fireInterval() {
+        return pattern() == 3
+                ? GameConfig.BOSS_PATTERN_3_FIRE_INTERVAL
+                : GameConfig.BOSS_FIRE_INTERVAL;
+    }
+
+    public boolean readyToFire(int interval) {
+        if (fireCooldown <= 0) {
+            fireCooldown = interval;
+            return true;
+        }
+        return false;
+    }
+
+    public double hpFraction() {
+        return hp / (double) maxHp;
+    }
+
     @Override
     public Rectangle getBounds() {
         return new Rectangle((int) x, (int) y, GameConfig.BOSS_WIDTH, GameConfig.BOSS_HEIGHT);

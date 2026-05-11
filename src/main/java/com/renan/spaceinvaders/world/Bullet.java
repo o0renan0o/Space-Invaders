@@ -16,6 +16,10 @@ public final class Bullet implements Entity {
     private boolean alive = true;
     private boolean piercing;
     private boolean splittable;
+    private boolean nearMissCredited;
+    private int damage = 1;
+    private int width = GameConfig.BULLET_WIDTH;
+    private int height = GameConfig.BULLET_HEIGHT;
 
     public Bullet(double x, double y, double vy, Side side) {
         this(x, y, 0, vy, side);
@@ -33,8 +37,8 @@ public final class Bullet implements Entity {
         if (!alive) return;
         x += vx;
         y += vy;
-        if (y < -GameConfig.BULLET_HEIGHT || y > GameConfig.HEIGHT + GameConfig.BULLET_HEIGHT
-                || x < -GameConfig.BULLET_WIDTH || x > GameConfig.WIDTH) {
+        if (y < -height || y > GameConfig.HEIGHT + height
+                || x < -width || x > GameConfig.WIDTH) {
             alive = false;
         }
     }
@@ -63,6 +67,10 @@ public final class Bullet implements Entity {
         return vx;
     }
 
+    public int getDamage() {
+        return damage;
+    }
+
     public boolean isPiercing() {
         return piercing;
     }
@@ -81,9 +89,36 @@ public final class Bullet implements Entity {
         return this;
     }
 
+    public boolean isNearMissCredited() {
+        return nearMissCredited;
+    }
+
+    public void creditNearMiss() {
+        this.nearMissCredited = true;
+    }
+
+    public Bullet withDamage(int dmg) {
+        this.damage = dmg;
+        return this;
+    }
+
+    public Bullet withSize(int w, int h) {
+        this.width = w;
+        this.height = h;
+        return this;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
     @Override
     public Rectangle getBounds() {
-        return new Rectangle((int) x, (int) y, GameConfig.BULLET_WIDTH, GameConfig.BULLET_HEIGHT);
+        return new Rectangle((int) x, (int) y, width, height);
     }
 
     @Override

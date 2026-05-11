@@ -18,7 +18,8 @@ java -jar target/space-invaders.jar
 | Key                | Action                |
 |--------------------|-----------------------|
 | `LEFT` / `RIGHT`   | Move (also `A` / `D`) |
-| `SPACE`            | Fire                  |
+| `SPACE` tap        | Fire (max 2 bullets onscreen) |
+| `SPACE` hold (0.5s)| Charge shot (piercing, 3 dmg) |
 | `P` / `ESC`        | Pause / resume        |
 | `Q` (while paused) | Quit to menu          |
 | `M`                | Toggle music / SFX    |
@@ -92,6 +93,25 @@ multiplier (max ×8). Score earned per kill is multiplied accordingly.
 
 Top 10 scores are persisted to `~/.spaceinvaders/hof` with 3-letter
 arcade-style initials.
+
+## Mechanics depth
+
+- **Two-bullet onscreen limit** forces precision — no SPACE-mashing.
+- **Charge shot**: holding SPACE for ~0.5 s suspends auto-fire and starts
+  charging. Releasing fires a wide piercing bullet that does 3 damage
+  (one-shots armoured aliens).
+- **Predictive alien fire**: aliens read the player's horizontal velocity
+  and lead the shot (factor 0.6, capped at ±2 px/tick of horizontal
+  bullet velocity). Standing still no longer keeps you safe.
+- **Boss has three escalating phases** based on HP:
+  - >66%: classic 3-bullet spread (green HP bar)
+  - 33–66%: spread + 3-column rain (yellow HP bar)
+  - <33%: spread + rain + aimed shot, ~40% faster fire cadence (red bar)
+- **Wave bonuses**: clearing a wave without losing a life doubles the
+  clear bonus (`PERFECT!`); clearing inside 30 s adds `+500` (`FAST!`).
+- **Near-miss reward**: dodge an alien bullet within 12 px of your
+  hitbox and you bank +25 points + 30 ticks of combo window, popup
+  `CLOSE!`. Dancing through bullets pays.
 
 ## Visual / juice features
 

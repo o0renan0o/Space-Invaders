@@ -93,6 +93,28 @@ public final class GameConfig {
     public static final int SCORE_PER_ALIEN_ROW_1 = 20;
     public static final int SCORE_PER_ALIEN_ROW_DEFAULT = 10;
 
+    public static final int MAX_PLAYER_BULLETS = 2;
+
+    public static final int CHARGE_THRESHOLD_TICKS = 30;
+    public static final int CHARGE_MAX_TICKS = 60;
+    public static final int CHARGE_BULLET_WIDTH = 10;
+    public static final int CHARGE_BULLET_HEIGHT = 22;
+    public static final int CHARGE_BULLET_DAMAGE = 3;
+
+    public static final double ALIEN_FIRE_LEAD_FACTOR = 0.6;
+    public static final double ALIEN_FIRE_MAX_HORIZONTAL_SPEED = 2.0;
+
+    public static final int NEAR_MISS_DISTANCE = 12;
+    public static final int NEAR_MISS_SCORE = 25;
+    public static final int NEAR_MISS_COMBO_BONUS_TICKS = 30;
+
+    public static final int WAVE_SPEED_BONUS_TICK_THRESHOLD = 60 * 30;
+    public static final int WAVE_SPEED_BONUS = 500;
+
+    public static final double BOSS_PATTERN_2_HP_FRACTION = 0.66;
+    public static final double BOSS_PATTERN_3_HP_FRACTION = 0.33;
+    public static final int BOSS_PATTERN_3_FIRE_INTERVAL = 22;
+
     private GameConfig() {
     }
 }

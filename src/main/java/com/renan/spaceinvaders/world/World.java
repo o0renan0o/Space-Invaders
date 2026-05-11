@@ -57,6 +57,12 @@ public final class World {
     private int nextRewardIndex;
     private boolean savedThisGame;
 
+    private int tickCounter;
+    private double playerVx;
+    private int waveStartTick;
+    private boolean wavePerfect = true;
+    private int chargeHoldTicks;
+
     private final Random rng = new Random();
 
     public World(int highScore) {
@@ -100,18 +106,21 @@ public final class World {
     }
 
     private void updatePlaying(InputHandler input, SoundManager sounds) {
+        tickCounter++;
         if (input.consumePressed(KeyEvent.VK_ESCAPE) || input.consumePressed(KeyEvent.VK_P)) {
             state = GameState.PAUSED;
             return;
         }
         if (input.consumePressed(KeyEvent.VK_M)) sounds.toggleMute();
 
+        double prevX = player.getX();
         if (input.isDown(KeyEvent.VK_LEFT) || input.isDown(KeyEvent.VK_A)) player.moveLeft();
         if (input.isDown(KeyEvent.VK_RIGHT) || input.isDown(KeyEvent.VK_D)) player.moveRight();
-        if (input.isDown(KeyEvent.VK_SPACE) && player.canFire()) {
-            bullets.addAll(player.fire(active));
-            sounds.play("shot");
-        }
+        playerVx = player.getX() - prevX;
+
+        handleFire(input, sounds);
+        detectNearMisses();
+
         player.tick();
         active.tick();
         combo.tick();
@@ -162,10 +171,85 @@ public final class World {
     }
 
     private void grantWaveBonus() {
-        int bonus = currentPhase.clearBonus();
+        int base = currentPhase.clearBonus();
+        int bonus = base;
+        int popupY = GameConfig.HEIGHT / 2;
+        addPopup(GameConfig.WIDTH / 2 - 60, popupY,
+                "WAVE CLEAR +" + base, new Color(0x33FF66));
+        if (wavePerfect) {
+            bonus += base;
+            addPopup(GameConfig.WIDTH / 2 - 60, popupY + 24,
+                    "PERFECT! +" + base, new Color(0xFFCC33));
+        }
+        int waveTicks = tickCounter - waveStartTick;
+        if (waveTicks <= GameConfig.WAVE_SPEED_BONUS_TICK_THRESHOLD) {
+            bonus += GameConfig.WAVE_SPEED_BONUS;
+            addPopup(GameConfig.WIDTH / 2 - 60, popupY + 48,
+                    "FAST! +" + GameConfig.WAVE_SPEED_BONUS, new Color(0x66FFFF));
+        }
         addScore(bonus);
-        addPopup(GameConfig.WIDTH / 2 - 60, GameConfig.HEIGHT / 2,
-                "WAVE CLEAR +" + bonus, new Color(0x33FF66));
+    }
+
+    private void handleFire(InputHandler input, SoundManager sounds) {
+        boolean fireDown = input.isDown(KeyEvent.VK_SPACE);
+        int playerBulletCount = countPlayerBullets();
+        boolean canShoot = playerBulletCount < GameConfig.MAX_PLAYER_BULLETS;
+
+        if (fireDown) {
+            chargeHoldTicks++;
+            if (chargeHoldTicks < GameConfig.CHARGE_THRESHOLD_TICKS) {
+                if (player.canFire() && canShoot) {
+                    bullets.addAll(player.fire(active));
+                    sounds.play("shot");
+                }
+            } else if (chargeHoldTicks > GameConfig.CHARGE_MAX_TICKS) {
+                chargeHoldTicks = GameConfig.CHARGE_MAX_TICKS;
+            }
+        } else {
+            if (chargeHoldTicks >= GameConfig.CHARGE_THRESHOLD_TICKS && canShoot) {
+                bullets.add(player.fireCharged());
+                sounds.play("shot");
+                cameraShake.shake(6, 4);
+            }
+            chargeHoldTicks = 0;
+        }
+    }
+
+    private int countPlayerBullets() {
+        int count = 0;
+        for (Bullet b : bullets) {
+            if (b.isAlive() && b.getSide() == Bullet.Side.PLAYER) count++;
+        }
+        return count;
+    }
+
+    private void detectNearMisses() {
+        if (player.isInvulnerable()) return;
+        java.awt.Rectangle pb = player.getBounds();
+        for (Bullet b : bullets) {
+            if (!b.isAlive() || b.getSide() != Bullet.Side.ALIEN) continue;
+            if (b.isNearMissCredited()) continue;
+            java.awt.Rectangle bb = b.getBounds();
+            if (pb.intersects(bb)) continue;
+            int dx = Math.max(0, Math.max(pb.x - (bb.x + bb.width), bb.x - (pb.x + pb.width)));
+            int dy = Math.max(0, Math.max(pb.y - (bb.y + bb.height), bb.y - (pb.y + pb.height)));
+            int dist = Math.max(dx, dy);
+            if (dist > 0 && dist <= GameConfig.NEAR_MISS_DISTANCE) {
+                b.creditNearMiss();
+                score += GameConfig.NEAR_MISS_SCORE;
+                combo.registerKill(GameConfig.NEAR_MISS_COMBO_BONUS_TICKS);
+                addPopup((int) b.getX(), (int) b.getY() - 12,
+                        "CLOSE! +" + GameConfig.NEAR_MISS_SCORE, new Color(0xFFCC33));
+            }
+        }
+    }
+
+    public int getChargeHoldTicks() {
+        return chargeHoldTicks;
+    }
+
+    public boolean isCharging() {
+        return chargeHoldTicks >= GameConfig.CHARGE_THRESHOLD_TICKS;
     }
 
     private void triggerGameOver(SoundManager sounds) {
@@ -301,6 +385,9 @@ public final class World {
         ufoTimer = computeUfoInterval();
         diveTimer = 60 * 6;
         alienAnimAccum = 0;
+        waveStartTick = tickCounter;
+        wavePerfect = true;
+        chargeHoldTicks = 0;
 
         if (currentPhase.has(Mechanic.BOSS)) {
             boss = new Boss(wave);
@@ -371,12 +458,27 @@ public final class World {
             if (shooter == null) break;
             double bx = shooter.getX() + (GameConfig.ALIEN_WIDTH - GameConfig.BULLET_WIDTH) / 2.0;
             double by = shooter.getY() + GameConfig.ALIEN_HEIGHT;
-            Bullet b = new Bullet(bx, by, GameConfig.ALIEN_BULLET_SPEED, Bullet.Side.ALIEN);
+            double[] velocity = leadAim(bx, by, GameConfig.ALIEN_BULLET_SPEED);
+            Bullet b = new Bullet(bx, by, velocity[0], velocity[1], Bullet.Side.ALIEN);
             if (currentPhase.has(Mechanic.SPLITTING_BULLETS)) b.splittable();
             bullets.add(b);
         }
         sounds.play("alien_shot");
         alienFireTicks = randomFireDelay();
+    }
+
+    private double[] leadAim(double sourceX, double sourceY, double bulletSpeed) {
+        double targetX = player.getX() + GameConfig.PLAYER_WIDTH / 2.0;
+        double targetY = player.getY() + GameConfig.PLAYER_HEIGHT / 2.0;
+        double dy = targetY - sourceY;
+        if (dy <= 1) return new double[]{0, bulletSpeed};
+        double timeToReach = dy / bulletSpeed;
+        double predictedX = targetX + playerVx * timeToReach * GameConfig.ALIEN_FIRE_LEAD_FACTOR;
+        double offsetX = predictedX - sourceX;
+        double desiredVx = offsetX / timeToReach;
+        double clampedVx = Math.max(-GameConfig.ALIEN_FIRE_MAX_HORIZONTAL_SPEED,
+                Math.min(GameConfig.ALIEN_FIRE_MAX_HORIZONTAL_SPEED, desiredVx));
+        return new double[]{clampedVx, bulletSpeed};
     }
 
     private Alien pickBottomAlien() {
@@ -417,15 +519,36 @@ public final class World {
     private void updateBoss(SoundManager sounds) {
         if (boss == null) return;
         boss.update();
-        if (boss.readyToFire()) {
-            double bx = boss.getX() + GameConfig.BOSS_WIDTH / 2.0 - GameConfig.BULLET_WIDTH / 2.0;
-            double by = boss.getY() + GameConfig.BOSS_HEIGHT;
-            bullets.add(new Bullet(bx, by, GameConfig.ALIEN_BULLET_SPEED * 1.3, Bullet.Side.ALIEN));
-            double angle = 0.6;
-            bullets.add(new Bullet(bx, by, -angle, GameConfig.ALIEN_BULLET_SPEED * 1.1, Bullet.Side.ALIEN));
-            bullets.add(new Bullet(bx, by, angle, GameConfig.ALIEN_BULLET_SPEED * 1.1, Bullet.Side.ALIEN));
-            sounds.play("alien_shot");
+        if (!boss.readyToFire(boss.fireInterval())) return;
+        int pattern = boss.pattern();
+        double bx = boss.getX() + GameConfig.BOSS_WIDTH / 2.0 - GameConfig.BULLET_WIDTH / 2.0;
+        double by = boss.getY() + GameConfig.BOSS_HEIGHT;
+        bossSpread(bx, by);
+        if (pattern >= 2) bossColumnRain(bx, by);
+        if (pattern >= 3) bossAimedShot(bx, by);
+        sounds.play("alien_shot");
+    }
+
+    private void bossSpread(double bx, double by) {
+        bullets.add(new Bullet(bx, by, 0, GameConfig.ALIEN_BULLET_SPEED * 1.3, Bullet.Side.ALIEN));
+        bullets.add(new Bullet(bx, by, -0.6, GameConfig.ALIEN_BULLET_SPEED * 1.1, Bullet.Side.ALIEN));
+        bullets.add(new Bullet(bx, by, 0.6, GameConfig.ALIEN_BULLET_SPEED * 1.1, Bullet.Side.ALIEN));
+    }
+
+    private void bossColumnRain(double bx, double by) {
+        int columns = 3;
+        int spread = GameConfig.BOSS_WIDTH / (columns + 1);
+        double bossLeft = boss.getX() + spread;
+        for (int i = 0; i < columns; i++) {
+            double cx = bossLeft + i * spread;
+            bullets.add(new Bullet(cx, by, 0,
+                    GameConfig.ALIEN_BULLET_SPEED * 0.85, Bullet.Side.ALIEN));
         }
+    }
+
+    private void bossAimedShot(double bx, double by) {
+        double[] v = leadAim(bx, by, GameConfig.ALIEN_BULLET_SPEED * 1.4);
+        bullets.add(new Bullet(bx, by, v[0], v[1], Bullet.Side.ALIEN));
     }
 
     private int computeUfoInterval() {
@@ -507,6 +630,7 @@ public final class World {
         spawnExplosion((int) player.getX() + GameConfig.PLAYER_WIDTH / 2,
                 (int) player.getY() + GameConfig.PLAYER_HEIGHT / 2, 24);
         combo.breakCombo();
+        wavePerfect = false;
         sounds.play("player_died");
     }
 

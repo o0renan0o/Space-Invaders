@@ -146,13 +146,18 @@ public final class Renderer {
         int barW = GameConfig.WIDTH - 200;
         g.setColor(new Color(0, 0, 0, 180));
         g.fillRect(barX - 2, barY - 2, barW + 4, 14);
-        g.setColor(new Color(0xFF3344));
-        int fill = (int) (barW * (boss.getHp() / (double) boss.getMaxHp()));
+        Color color = switch (boss.pattern()) {
+            case 1 -> new Color(0x33FF66);
+            case 2 -> new Color(0xFFCC33);
+            default -> new Color(0xFF3344);
+        };
+        g.setColor(color);
+        int fill = (int) (barW * boss.hpFraction());
         g.fillRect(barX, barY, Math.max(0, fill), 10);
         g.setColor(WHITE);
         g.drawRect(barX, barY, barW, 10);
         g.setFont(smallFont);
-        g.drawString("BOSS HP", barX, barY - 4);
+        g.drawString("BOSS HP   PHASE " + boss.pattern(), barX, barY - 4);
     }
 
     private void drawUfo(Graphics2D g) {
@@ -194,14 +199,14 @@ public final class Renderer {
             Color c = b.getSide() == Bullet.Side.PLAYER
                     ? (b.isPiercing() ? CYAN : WHITE)
                     : (b.isSplittable() ? new Color(0xFFAA33) : YELLOW);
-            g.setColor(c);
-            g.fillRect((int) b.getX(), (int) b.getY(),
-                    GameConfig.BULLET_WIDTH, GameConfig.BULLET_HEIGHT);
+            int w = b.getWidth();
+            int h = b.getHeight();
             if (b.isPiercing()) {
                 g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), 80));
-                g.fillRect((int) b.getX() - 2, (int) b.getY() - 2,
-                        GameConfig.BULLET_WIDTH + 4, GameConfig.BULLET_HEIGHT + 4);
+                g.fillRect((int) b.getX() - 3, (int) b.getY() - 3, w + 6, h + 6);
             }
+            g.setColor(c);
+            g.fillRect((int) b.getX(), (int) b.getY(), w, h);
         }
     }
 
@@ -241,6 +246,28 @@ public final class Renderer {
         if (p.isInvulnerable() && ((System.nanoTime() / 100_000_000L) & 1) == 0) return;
         drawShip(g, (int) p.getX(), (int) p.getY(),
                 GameConfig.PLAYER_WIDTH, GameConfig.PLAYER_HEIGHT);
+        drawChargeIndicator(g, p);
+    }
+
+    private void drawChargeIndicator(Graphics2D g, Player p) {
+        int hold = world.getChargeHoldTicks();
+        if (hold <= 0) return;
+        int barW = GameConfig.PLAYER_WIDTH;
+        int barX = (int) p.getX();
+        int barY = (int) p.getY() + GameConfig.PLAYER_HEIGHT + 4;
+        float frac = Math.min(1f, hold / (float) GameConfig.CHARGE_THRESHOLD_TICKS);
+        g.setColor(new Color(40, 40, 60));
+        g.fillRect(barX, barY, barW, 3);
+        Color fill = world.isCharging() ? CYAN : new Color(200, 200, 100);
+        g.setColor(fill);
+        g.fillRect(barX, barY, (int) (barW * frac), 3);
+        if (world.isCharging()) {
+            int glow = (int) (4 + Math.sin(System.nanoTime() / 80_000_000.0) * 2);
+            g.setColor(new Color(CYAN.getRed(), CYAN.getGreen(), CYAN.getBlue(), 90));
+            g.fillRect((int) p.getX() - glow, (int) p.getY() - glow,
+                    GameConfig.PLAYER_WIDTH + glow * 2,
+                    GameConfig.PLAYER_HEIGHT + glow * 2);
+        }
     }
 
     private void drawShip(Graphics2D g, int x, int y, int w, int h) {
