@@ -33,7 +33,10 @@ public final class CollisionSystem {
 
     private static void handleBulletsVsShields(World world) {
         boolean reflect = world.getActivePowerUps().isActive(PowerUpType.REFLECT);
-        for (Bullet b : world.getBullets()) {
+        List<Bullet> bullets = world.getBullets();
+        int n = bullets.size();
+        for (int i = 0; i < n; i++) {
+            Bullet b = bullets.get(i);
             if (!b.isAlive()) continue;
             Rectangle bb = b.getBounds();
             for (Shield s : world.getShields()) {

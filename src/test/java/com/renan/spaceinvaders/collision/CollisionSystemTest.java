@@ -149,4 +149,23 @@ class CollisionSystemTest {
 
         assertEquals(Math.min(lives + 1, GameConfig.PLAYER_MAX_LIVES), p.getLives());
     }
+
+    @Test
+    void reflectShieldHitDoesNotConcurrentModify() {
+        world.getActivePowerUps().activate(PowerUpType.REFLECT);
+        if (world.getShields().isEmpty()) {
+            return;
+        }
+        var shield = world.getShields().get(0);
+        double bx = shield.getX() + 4;
+        double by = shield.getY();
+        for (int i = 0; i < 4; i++) {
+            world.getBullets().add(new Bullet(bx + i * 6, by, 0, Bullet.Side.ALIEN));
+        }
+        CollisionSystem.handle(world, sounds);
+        long playerBullets = world.getBullets().stream()
+                .filter(b -> b.getSide() == Bullet.Side.PLAYER)
+                .count();
+        assertTrue(playerBullets >= 1, "at least one reflected player bullet expected");
+    }
 }
