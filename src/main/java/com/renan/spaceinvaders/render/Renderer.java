@@ -379,12 +379,16 @@ public final class Renderer {
             g.drawRect(cockpitX, cockpitY, cockpitW, cockpitH);
         }
 
+        int lives = Math.max(0, world.getPlayer().getLives());
+        boolean invuln = world.getPlayer().isInvulnerable();
         com.renan.spaceinvaders.ui.FaceState state = world.getFaceController().compute(
-                world.getState(), world.getPlayer().getLives());
-        BufferedImage face = assets.get(state.spriteKey);
+                world.getState(), lives, invuln);
+
         int faceSize = Math.min(cockpitW - 24, cockpitH - 10);
         int faceX = cockpitX + (cockpitW - faceSize) / 2;
         int faceY = cockpitY + (cockpitH - faceSize) / 2;
+
+        BufferedImage face = resolveFace(state, lives);
         if (face != null) {
             g.drawImage(face, faceX, faceY, faceSize, faceSize, null);
         } else {
@@ -392,14 +396,29 @@ public final class Renderer {
             g.fillRect(faceX, faceY, faceSize, faceSize);
         }
 
-        int lives = Math.max(0, world.getPlayer().getLives());
-        int startingLives = Math.max(1, world.getDifficulty().startingLives);
-        double damage = 1.0 - (lives / (double) startingLives);
-        if (damage > 0 && state != com.renan.spaceinvaders.ui.FaceState.DEAD) {
-            int alpha = (int) Math.min(140, damage * 130);
-            g.setColor(new Color(255, 40, 40, alpha));
-            g.fillRect(faceX, faceY, faceSize, faceSize);
+        com.renan.spaceinvaders.assets.FaceSheet sheet = assets.getFaceSheet();
+        if (sheet == null || !sheet.isLoaded()) {
+            int startingLives = Math.max(1, world.getDifficulty().startingLives);
+            double damage = 1.0 - (lives / (double) startingLives);
+            if (damage > 0 && state != com.renan.spaceinvaders.ui.FaceState.DEAD) {
+                int alpha = (int) Math.min(140, damage * 130);
+                g.setColor(new Color(255, 40, 40, alpha));
+                g.fillRect(faceX, faceY, faceSize, faceSize);
+            }
         }
+    }
+
+    private BufferedImage resolveFace(com.renan.spaceinvaders.ui.FaceState state, int lives) {
+        com.renan.spaceinvaders.assets.FaceSheet sheet = assets.getFaceSheet();
+        if (sheet != null && sheet.isLoaded()) {
+            if (state == com.renan.spaceinvaders.ui.FaceState.DEAD) return sheet.dead();
+            if (state == com.renan.spaceinvaders.ui.FaceState.GOD) return sheet.god();
+            int row = state == com.renan.spaceinvaders.ui.FaceState.WIN
+                    ? 0
+                    : com.renan.spaceinvaders.assets.FaceSheet.healthRowForLives(lives);
+            return sheet.get(row, state.doomColumn);
+        }
+        return assets.get(state.spriteKey);
     }
 
     private void drawComboRegion(Graphics2D g, int x, int w, int top, int height) {

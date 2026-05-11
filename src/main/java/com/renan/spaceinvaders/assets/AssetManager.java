@@ -16,9 +16,14 @@ public final class AssetManager {
 
     private final Map<String, BufferedImage> images = new HashMap<>();
     private final List<BufferedImage> explosionFrames = new ArrayList<>();
+    private FaceSheet faceSheet;
 
     public AssetManager() {
         loadAll();
+    }
+
+    public FaceSheet getFaceSheet() {
+        return faceSheet;
     }
 
     private void loadAll() {
@@ -41,6 +46,7 @@ public final class AssetManager {
         put("cockpit", "pics/cabineT.png");
 
         sliceExplosionSheet("pics/phaser_explode.png");
+        faceSheet = new FaceSheet("pics/doomguy_sheet.png");
 
         for (Map.Entry<String, BufferedImage> e : SpriteFactory.buildAll().entrySet()) {
             images.putIfAbsent(e.getKey(), e.getValue());

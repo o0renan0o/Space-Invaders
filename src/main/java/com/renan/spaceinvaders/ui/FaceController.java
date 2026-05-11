@@ -55,8 +55,13 @@ public final class FaceController {
     }
 
     public FaceState compute(GameState gameState, int lives) {
+        return compute(gameState, lives, false);
+    }
+
+    public FaceState compute(GameState gameState, int lives, boolean invulnerable) {
         if (gameState == GameState.GAME_OVER || lives <= 0) return FaceState.DEAD;
         if (gameState == GameState.WAVE_CLEARED) return FaceState.WIN;
+        if (invulnerable) return FaceState.GOD;
         if (hurtTicks > 0) return FaceState.HURT;
         if (evilTicks > 0) return FaceState.EVIL_GRIN;
         if (attackTicks > 0) return FaceState.ATTACK;

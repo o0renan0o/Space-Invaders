@@ -78,6 +78,42 @@ class FaceControllerTest {
     }
 
     @Test
+    void invulnerableShowsGodMode() {
+        FaceController f = new FaceController();
+        assertEquals(FaceState.GOD, f.compute(GameState.PLAYING, 3, true));
+    }
+
+    @Test
+    void invulnerableOverridesHurtAndAttack() {
+        FaceController f = new FaceController();
+        f.onHit();
+        f.onShot();
+        assertEquals(FaceState.GOD, f.compute(GameState.PLAYING, 3, true));
+    }
+
+    @Test
+    void deadStillBeatsInvulnerable() {
+        FaceController f = new FaceController();
+        assertEquals(FaceState.DEAD, f.compute(GameState.PLAYING, 0, true));
+    }
+
+    @Test
+    void waveClearedBeatsInvulnerable() {
+        FaceController f = new FaceController();
+        assertEquals(FaceState.WIN, f.compute(GameState.WAVE_CLEARED, 3, true));
+    }
+
+    @Test
+    void doomColumnsCoverCanonicalLayout() {
+        assertEquals(0, FaceState.FORWARD.doomColumn);
+        assertEquals(3, FaceState.RIGHT.doomColumn);
+        assertEquals(4, FaceState.LEFT.doomColumn);
+        assertEquals(5, FaceState.HURT.doomColumn);
+        assertEquals(6, FaceState.ATTACK.doomColumn);
+        assertEquals(7, FaceState.EVIL_GRIN.doomColumn);
+    }
+
+    @Test
     void resetClearsAllTickers() {
         FaceController f = new FaceController();
         f.onShot();
