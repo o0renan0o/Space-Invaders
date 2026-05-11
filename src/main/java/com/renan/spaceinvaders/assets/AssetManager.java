@@ -31,6 +31,15 @@ public final class AssetManager {
         put("alien_armored", "pics/shmup-baddie3.png");
         put("starfield_bg", "pics/phaser_starfield.png");
 
+        put("face_forward", "pics/face.png");
+        put("face_left", "pics/faceL.png");
+        put("face_right", "pics/faceR.png");
+        put("face_attack", "pics/faceAtack.png");
+        put("face_hurt", "pics/faceShot.png");
+        put("face_dead", "pics/faceDied.png");
+        put("face_win", "pics/FaceWin.png");
+        put("cockpit", "pics/cabineT.png");
+
         sliceExplosionSheet("pics/phaser_explode.png");
 
         for (Map.Entry<String, BufferedImage> e : SpriteFactory.buildAll().entrySet()) {

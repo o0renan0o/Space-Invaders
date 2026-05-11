@@ -94,6 +94,25 @@ multiplier (max ×8). Score earned per kill is multiplied accordingly.
 Top 10 scores are persisted to `~/.spaceinvaders/hof` with 3-letter
 arcade-style initials.
 
+## Doom face HUD
+
+A nostalgic Doom-style STBAR face sits inside the ship cockpit at the top-right.
+The expression changes with what's happening:
+
+| Face          | Trigger                                    |
+|---------------|--------------------------------------------|
+| Forward       | Default                                    |
+| Look left     | Holding `LEFT` / `A`                       |
+| Look right    | Holding `RIGHT` / `D`                      |
+| Attack        | ~0.13 s after firing                       |
+| Hurt          | ~0.5 s after taking damage                 |
+| Evil grin     | ~0.5 s after killing a UFO or boss         |
+| Win           | While `WAVE_CLEARED` is showing            |
+| Dead          | While `GAME_OVER` or out of lives          |
+
+A red overlay tints the face proportional to remaining lives — by the last
+life it visibly bleeds through, just like the original Doomguy.
+
 ## Mechanics depth
 
 - **Two-bullet onscreen limit** forces precision — no SPACE-mashing.

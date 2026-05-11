@@ -4,6 +4,7 @@ import com.renan.spaceinvaders.assets.AssetManager;
 import com.renan.spaceinvaders.core.Difficulty;
 import com.renan.spaceinvaders.core.GameConfig;
 import com.renan.spaceinvaders.core.GameState;
+import com.renan.spaceinvaders.ui.FaceState;
 import com.renan.spaceinvaders.world.Alien;
 import com.renan.spaceinvaders.world.Boss;
 import com.renan.spaceinvaders.world.Bullet;
@@ -143,7 +144,7 @@ public final class Renderer {
         if (boss == null) return;
         int barY = 40;
         int barX = 100;
-        int barW = GameConfig.WIDTH - 200;
+        int barW = GameConfig.WIDTH - 260;
         g.setColor(new Color(0, 0, 0, 180));
         g.fillRect(barX - 2, barY - 2, barW + 4, 14);
         Color color = switch (boss.pattern()) {
@@ -318,6 +319,51 @@ public final class Renderer {
         drawCombo(g);
         drawActivePowerUps(g);
         drawBossHud(g);
+        drawDoomFace(g);
+    }
+
+    private void drawDoomFace(Graphics2D g) {
+        int cockpitW = 100;
+        int cockpitH = 92;
+        int cockpitX = GameConfig.WIDTH - cockpitW - 12;
+        int cockpitY = 32;
+        BufferedImage cockpit = assets.get("cockpit");
+        if (cockpit != null) {
+            g.drawImage(cockpit, cockpitX, cockpitY, cockpitW, cockpitH, null);
+        } else {
+            g.setColor(new Color(40, 40, 60));
+            g.fillRect(cockpitX, cockpitY, cockpitW, cockpitH);
+            g.setColor(new Color(100, 100, 140));
+            g.drawRect(cockpitX, cockpitY, cockpitW, cockpitH);
+        }
+
+        FaceState state = world.getFaceController().compute(
+                world.getState(), world.getPlayer().getLives());
+        BufferedImage face = assets.get(state.spriteKey);
+        int faceSize = 60;
+        int faceX = cockpitX + (cockpitW - faceSize) / 2;
+        int faceY = cockpitY + (cockpitH - faceSize) / 2;
+        if (face != null) {
+            g.drawImage(face, faceX, faceY, faceSize, faceSize, null);
+        } else {
+            g.setColor(new Color(200, 150, 100));
+            g.fillRect(faceX, faceY, faceSize, faceSize);
+        }
+
+        int lives = Math.max(0, world.getPlayer().getLives());
+        int startingLives = Math.max(1, world.getDifficulty().startingLives);
+        double damage = 1.0 - (lives / (double) startingLives);
+        if (damage > 0 && state != FaceState.DEAD) {
+            int alpha = (int) Math.min(140, damage * 130);
+            g.setColor(new Color(255, 40, 40, alpha));
+            g.fillRect(faceX, faceY, faceSize, faceSize);
+        }
+
+        g.setFont(smallFont);
+        g.setColor(WHITE);
+        String livesText = "x" + lives;
+        int tw = g.getFontMetrics().stringWidth(livesText);
+        g.drawString(livesText, cockpitX + cockpitW - tw - 6, cockpitY + cockpitH - 6);
     }
 
     private void drawCombo(Graphics2D g) {

@@ -9,6 +9,7 @@ import com.renan.spaceinvaders.core.Mechanic;
 import com.renan.spaceinvaders.core.Phase;
 import com.renan.spaceinvaders.core.Phases;
 import com.renan.spaceinvaders.input.InputHandler;
+import com.renan.spaceinvaders.ui.FaceController;
 import com.renan.spaceinvaders.ui.HallOfFame;
 import com.renan.spaceinvaders.ui.InitialsEntry;
 
@@ -40,6 +41,7 @@ public final class World {
     private final StarField starField = new StarField();
     private final HallOfFame hallOfFame;
     private final InitialsEntry initialsEntry = new InitialsEntry();
+    private final FaceController faceController = new FaceController();
     private Ufo ufo;
     private Boss boss;
 
@@ -117,6 +119,8 @@ public final class World {
         if (input.isDown(KeyEvent.VK_LEFT) || input.isDown(KeyEvent.VK_A)) player.moveLeft();
         if (input.isDown(KeyEvent.VK_RIGHT) || input.isDown(KeyEvent.VK_D)) player.moveRight();
         playerVx = player.getX() - prevX;
+        if (playerVx < -0.1) faceController.onMoveLeft();
+        else if (playerVx > 0.1) faceController.onMoveRight();
 
         handleFire(input, sounds);
         detectNearMisses();
@@ -125,6 +129,7 @@ public final class World {
         active.tick();
         combo.tick();
         cameraShake.tick();
+        faceController.tick();
 
         moveAliens();
         animateAliens();
@@ -201,6 +206,7 @@ public final class World {
                 if (player.canFire() && canShoot) {
                     bullets.addAll(player.fire(active));
                     sounds.play("shot");
+                    faceController.onShot();
                 }
             } else if (chargeHoldTicks > GameConfig.CHARGE_MAX_TICKS) {
                 chargeHoldTicks = GameConfig.CHARGE_MAX_TICKS;
@@ -209,6 +215,7 @@ public final class World {
             if (chargeHoldTicks >= GameConfig.CHARGE_THRESHOLD_TICKS && canShoot) {
                 bullets.add(player.fireCharged());
                 sounds.play("shot");
+                faceController.onShot();
                 cameraShake.shake(6, 4);
             }
             chargeHoldTicks = 0;
@@ -334,6 +341,7 @@ public final class World {
         popups.clear();
         active.clear();
         combo.breakCombo();
+        faceController.reset();
         ufo = null;
         boss = null;
         spawnWave();
@@ -606,6 +614,7 @@ public final class World {
                 (int) u.getY() + GameConfig.UFO_HEIGHT / 2, 20);
         sounds.play("alien_died");
         cameraShake.shake(8, 6);
+        faceController.onSpecialKill();
         ufo = null;
     }
 
@@ -621,6 +630,7 @@ public final class World {
             spawnExplosion(ox, oy, 30);
         }
         cameraShake.shake(30, GameConfig.CAMERA_SHAKE_BOSS);
+        faceController.onSpecialKill();
         sounds.play("alien_died");
         boss = null;
     }
@@ -631,6 +641,7 @@ public final class World {
                 (int) player.getY() + GameConfig.PLAYER_HEIGHT / 2, 24);
         combo.breakCombo();
         wavePerfect = false;
+        faceController.onHit();
         sounds.play("player_died");
     }
 
@@ -733,6 +744,7 @@ public final class World {
     public StarField getStarField() { return starField; }
     public HallOfFame getHallOfFame() { return hallOfFame; }
     public InitialsEntry getInitialsEntry() { return initialsEntry; }
+    public FaceController getFaceController() { return faceController; }
     public Phase getCurrentPhase() { return currentPhase; }
     public Difficulty getDifficulty() { return difficulty; }
     public GameState getState() { return state; }
