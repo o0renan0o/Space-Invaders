@@ -9,6 +9,9 @@ import com.renan.spaceinvaders.core.Mechanic;
 import com.renan.spaceinvaders.core.Phase;
 import com.renan.spaceinvaders.core.Phases;
 import com.renan.spaceinvaders.input.InputHandler;
+import com.renan.spaceinvaders.meta.Profile;
+import com.renan.spaceinvaders.meta.ProfileStore;
+import com.renan.spaceinvaders.meta.Upgrade;
 import com.renan.spaceinvaders.ui.FaceController;
 import com.renan.spaceinvaders.ui.HallOfFame;
 import com.renan.spaceinvaders.ui.InitialsEntry;
@@ -47,6 +50,10 @@ public final class World {
 
     private int score;
     private int highScore;
+    private int coinsEarned;
+    private int bonusLives;
+    private double dropChanceBonus;
+    private double cooldownMultiplier = 1.0;
     private int wave = 1;
     private Phase currentPhase = Phases.LIST.get(0);
     private int alienDirection = 1;
@@ -67,24 +74,78 @@ public final class World {
 
     private final Random rng = new Random();
 
+    private final ProfileStore profileStore;
+    private final Profile profile;
+    private int shopIndex;
+
     public World(int highScore) {
+        this(highScore, new ProfileStore());
+    }
+
+    public World(int highScore, ProfileStore profileStore) {
         this.highScore = highScore;
         this.hallOfFame = new HallOfFame();
         if (hallOfFame.topScore() > highScore) this.highScore = hallOfFame.topScore();
+        this.profileStore = profileStore;
+        this.profile = profileStore.load();
+        applyProfileUpgrades();
         spawnShields(GameConfig.SHIELD_COUNT);
+    }
+
+    private void applyProfileUpgrades() {
+        applyUpgrades(profile.bonusLives(), profile.dropChanceBonus(), profile.cooldownMultiplier());
+    }
+
+    public Profile getProfile() {
+        return profile;
+    }
+
+    public int getShopIndex() {
+        return shopIndex;
     }
 
     public void update(InputHandler input, SoundManager sounds) {
         starField.update();
+        updateMusicContext(sounds);
         switch (state) {
             case MENU -> updateMenu(input);
             case HALL_OF_FAME -> updateHallOfFame(input);
+            case SHOP -> updateShop(input, sounds);
             case PLAYING -> updatePlaying(input, sounds);
             case PAUSED -> updatePaused(input);
             case WAVE_CLEARED -> updateWaveCleared();
             case GAME_OVER -> updateGameOver(input);
             case ENTERING_INITIALS -> updateInitials(input);
             case BOSS_INTRO, DIFFICULTY_SELECT -> state = GameState.MENU;
+        }
+    }
+
+    private void updateMusicContext(SoundManager sounds) {
+        boolean bossPhase = currentPhase != null && currentPhase.has(Mechanic.BOSS);
+        String desired = switch (state) {
+            case PLAYING, PAUSED, WAVE_CLEARED -> bossPhase ? "music_boss" : "music";
+            case MENU, HALL_OF_FAME, SHOP, ENTERING_INITIALS, GAME_OVER, BOSS_INTRO, DIFFICULTY_SELECT
+                    -> "music_menu";
+        };
+        sounds.playMusic(desired);
+    }
+
+    private void updateShop(InputHandler input, SoundManager sounds) {
+        Upgrade[] all = Upgrade.values();
+        if (input.consumePressed(KeyEvent.VK_ESCAPE) || input.consumePressed(KeyEvent.VK_S)) {
+            profileStore.save(profile);
+            applyProfileUpgrades();
+            state = GameState.MENU;
+            return;
+        }
+        if (input.consumePressed(KeyEvent.VK_DOWN)) shopIndex = (shopIndex + 1) % all.length;
+        if (input.consumePressed(KeyEvent.VK_UP)) shopIndex = (shopIndex - 1 + all.length) % all.length;
+        if (input.consumePressed(KeyEvent.VK_ENTER) || input.consumePressed(KeyEvent.VK_SPACE)) {
+            if (profile.buy(all[shopIndex])) {
+                profileStore.save(profile);
+                applyProfileUpgrades();
+                if (sounds != null) sounds.play("coin");
+            }
         }
     }
 
@@ -95,6 +156,9 @@ public final class World {
             difficulty = difficulty.next();
         } else if (input.consumePressed(KeyEvent.VK_H)) {
             state = GameState.HALL_OF_FAME;
+        } else if (input.consumePressed(KeyEvent.VK_S)) {
+            shopIndex = 0;
+            state = GameState.SHOP;
         }
     }
 
@@ -141,7 +205,10 @@ public final class World {
         for (Bullet b : bullets) b.update();
         bullets.removeIf(b -> !b.isAlive());
 
-        for (PowerUp p : powerUps) p.update();
+        boolean magnet = active.isActive(PowerUpType.MAGNET);
+        double playerCx = player.getX() + GameConfig.PLAYER_WIDTH / 2.0;
+        double playerCy = player.getY() + GameConfig.PLAYER_HEIGHT / 2.0;
+        for (PowerUp p : powerUps) p.update(playerCx, playerCy, magnet);
         powerUps.removeIf(p -> !p.isAlive());
 
         for (Particle p : particles) p.update();
@@ -266,6 +333,11 @@ public final class World {
         sounds.play("player_died");
         cameraShake.shake(40, GameConfig.CAMERA_SHAKE_PLAYER);
         if (score > highScore) highScore = score;
+        if (coinsEarned > 0) {
+            profile.earn(coinsEarned);
+            profileStore.save(profile);
+            coinsEarned = 0;
+        }
     }
 
     private void updatePaused(InputHandler input) {
@@ -330,9 +402,11 @@ public final class World {
     public void startNewGame() {
         score = 0;
         wave = 1;
+        coinsEarned = 0;
         nextRewardIndex = 0;
         savedThisGame = false;
-        player.setStartingLives(difficulty.startingLives);
+        player.setStartingLives(difficulty.startingLives + bonusLives);
+        player.setCooldownMultiplier(cooldownMultiplier);
         player.reset();
         bullets.clear();
         explosions.clear();
@@ -386,7 +460,7 @@ public final class World {
         int shieldCount = currentPhase.has(Mechanic.FEWER_SHIELDS)
                 ? Math.min(currentPhase.shieldCount(), 2)
                 : currentPhase.shieldCount();
-        spawnShields(shieldCount);
+        spawnShields(Math.min(GameConfig.SHIELD_COUNT + 2, shieldCount + profile.bonusShields()));
 
         alienDirection = 1;
         alienFireTicks = randomFireDelay();
@@ -588,6 +662,7 @@ public final class World {
 
     public void onAlienKilled(Alien a, SoundManager sounds) {
         combo.registerKill();
+        coinsEarned += GameConfig.COIN_PER_ALIEN;
         int base = a.scoreValue();
         int gained = base * combo.getMultiplier();
         addScore(gained);
@@ -599,7 +674,7 @@ public final class World {
         spawnExplosion((int) a.getX() + GameConfig.ALIEN_WIDTH / 2,
                 (int) a.getY() + GameConfig.ALIEN_HEIGHT / 2, 14);
         sounds.play("alien_died");
-        if (rng.nextDouble() < difficulty.powerUpDropChance) {
+        if (rng.nextDouble() < difficulty.powerUpDropChance + dropChanceBonus) {
             powerUps.add(new PowerUp(a.getX() + GameConfig.ALIEN_WIDTH / 2.0 - GameConfig.POWERUP_SIZE / 2.0,
                     a.getY(), PowerUpType.randomDrop(rng)));
         }
@@ -607,6 +682,7 @@ public final class World {
 
     public void onUfoKilled(Ufo u, SoundManager sounds) {
         combo.registerKill();
+        coinsEarned += GameConfig.COIN_PER_UFO;
         int gained = GameConfig.UFO_SCORE * combo.getMultiplier();
         addScore(gained);
         addPopup((int) u.getX(), (int) u.getY(), "+" + gained, new Color(0xFF66AA));
@@ -619,6 +695,7 @@ public final class World {
     }
 
     public void onBossKilled(Boss b, SoundManager sounds) {
+        coinsEarned += GameConfig.COIN_PER_BOSS;
         int gained = GameConfig.BOSS_SCORE + wave * 100;
         addScore(gained);
         addPopup((int) b.getX() + GameConfig.BOSS_WIDTH / 2 - 50,
@@ -646,6 +723,10 @@ public final class World {
     }
 
     public void onPowerUpCollected(PowerUp pu) {
+        onPowerUpCollected(pu, null);
+    }
+
+    public void onPowerUpCollected(PowerUp pu, SoundManager sounds) {
         PowerUpType type = pu.getType();
         switch (type) {
             case EXTRA_LIFE -> {
@@ -658,11 +739,31 @@ public final class World {
                         : currentPhase.shieldCount());
                 addPopup((int) pu.getX(), (int) pu.getY(), "SHIELDS!", new Color(0x66FF77));
             }
+            case NUKE -> {
+                detonateNuke(sounds);
+                addPopup((int) pu.getX(), (int) pu.getY(), "NUKE!", new Color(0xFFFFAA));
+            }
             default -> {
                 active.activate(type);
                 addPopup((int) pu.getX(), (int) pu.getY(), type.label, type.color);
             }
         }
+        if (sounds != null && type != PowerUpType.NUKE) sounds.play("powerup");
+    }
+
+    private void detonateNuke(SoundManager sounds) {
+        cameraShake.shake(40, GameConfig.CAMERA_SHAKE_PLAYER);
+        int killed = 0;
+        for (Alien a : aliens) {
+            if (!a.isAlive()) continue;
+            spawnExplosion((int) a.getX() + GameConfig.ALIEN_WIDTH / 2,
+                    (int) a.getY() + GameConfig.ALIEN_HEIGHT / 2, 12);
+            a.hit(999);
+            killed++;
+        }
+        addScore(killed * GameConfig.NUKE_SCORE_PER_KILL);
+        coinsEarned += killed;
+        if (sounds != null) sounds.play("nuke");
     }
 
     public void onShieldHitBySplittable(double x, double y) {
@@ -670,6 +771,11 @@ public final class World {
         Bullet right = new Bullet(x + 6, y, 1.2, GameConfig.ALIEN_BULLET_SPEED * 0.9, Bullet.Side.ALIEN);
         bullets.add(left);
         bullets.add(right);
+    }
+
+    public void spawnReflectedBullet(double x, double y) {
+        Bullet up = new Bullet(x, y, -GameConfig.PLAYER_BULLET_SPEED, Bullet.Side.PLAYER);
+        bullets.add(up);
     }
 
     public void addScore(int n) {
@@ -739,6 +845,15 @@ public final class World {
     public Ufo getUfo() { return ufo; }
     public Boss getBoss() { return boss; }
     public ActivePowerUps getActivePowerUps() { return active; }
+    public int getCoinsEarned() { return coinsEarned; }
+    public void setCoinsEarned(int v) { this.coinsEarned = v; }
+    public void applyUpgrades(int bonusLives, double dropChanceBonus, double cooldownMultiplier) {
+        this.bonusLives = Math.max(0, bonusLives);
+        this.dropChanceBonus = Math.max(0, dropChanceBonus);
+        this.cooldownMultiplier = Math.max(0.5, cooldownMultiplier);
+    }
+    public double getCooldownMultiplier() { return cooldownMultiplier; }
+    public double getDropChanceBonus() { return dropChanceBonus; }
     public Combo getCombo() { return combo; }
     public CameraShake getCameraShake() { return cameraShake; }
     public StarField getStarField() { return starField; }

@@ -27,14 +27,20 @@ public final class SoundManager {
 
     private final Map<String, Sample> samples = new HashMap<>();
     private Clip musicClip;
+    private String currentMusic;
     private boolean muted;
 
     public SoundManager() {
         load("music", "Sound/metroid.wav");
+        load("music_menu", "Sound/Town.wav");
+        load("music_boss", "Sound/TownRoad.wav");
         load("shot", "Sound/laser2.wav");
         load("alien_died", "Sound/died.wav");
         load("alien_shot", "Sound/alienShot.wav");
         load("player_died", "Sound/shot.wav");
+        load("powerup", "Sound/bits.wav");
+        load("nuke", "Sound/bitst.wav");
+        load("coin", "Sound/bitsp.wav");
     }
 
     private void load(String name, String resourcePath) {
@@ -73,6 +79,11 @@ public final class SoundManager {
 
     public void playMusic(String name) {
         if (muted) return;
+        if (name == null) {
+            stopMusic();
+            return;
+        }
+        if (name.equals(currentMusic) && musicClip != null && musicClip.isRunning()) return;
         Sample sample = samples.get(name);
         if (sample == null) return;
         stopMusic();
@@ -81,8 +92,10 @@ public final class SoundManager {
             musicClip.open(sample.format, sample.data, 0, sample.data.length);
             applyGain(musicClip, -6f);
             musicClip.loop(Clip.LOOP_CONTINUOUSLY);
+            currentMusic = name;
         } catch (Exception e) {
             musicClip = null;
+            currentMusic = null;
         }
     }
 
@@ -92,6 +105,11 @@ public final class SoundManager {
             musicClip.close();
             musicClip = null;
         }
+        currentMusic = null;
+    }
+
+    public String getCurrentMusic() {
+        return currentMusic;
     }
 
     public boolean isMuted() {
@@ -101,9 +119,13 @@ public final class SoundManager {
     public void toggleMute() {
         muted = !muted;
         if (muted) {
+            String saved = currentMusic;
             stopMusic();
-        } else {
-            playMusic("music");
+            currentMusic = saved;
+        } else if (currentMusic != null) {
+            String resume = currentMusic;
+            currentMusic = null;
+            playMusic(resume);
         }
     }
 

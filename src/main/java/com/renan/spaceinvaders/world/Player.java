@@ -14,6 +14,11 @@ public final class Player implements Entity {
     private int fireCooldown;
     private int invulnTicks;
     private int initialLives;
+    private double cooldownMultiplier = 1.0;
+
+    public void setCooldownMultiplier(double m) {
+        this.cooldownMultiplier = Math.max(0.4, m);
+    }
 
     public Player() {
         this(GameConfig.PLAYER_LIVES);
@@ -53,34 +58,35 @@ public final class Player implements Entity {
     }
 
     public List<Bullet> fire(ActivePowerUps active) {
-        fireCooldown = active.isActive(PowerUpType.RAPID_FIRE)
+        int base = active.isActive(PowerUpType.RAPID_FIRE)
                 ? GameConfig.RAPID_FIRE_COOLDOWN
                 : GameConfig.PLAYER_FIRE_COOLDOWN_TICKS;
+        fireCooldown = Math.max(2, (int) Math.round(base * cooldownMultiplier));
         List<Bullet> out = new ArrayList<>();
         double by = y - GameConfig.BULLET_HEIGHT;
         boolean piercing = active.isActive(PowerUpType.PIERCING);
+        boolean damageUp = active.isActive(PowerUpType.DAMAGE_UP);
         if (active.isActive(PowerUpType.DOUBLE_SHOT)) {
             double left = x + 8;
             double right = x + GameConfig.PLAYER_WIDTH - 8 - GameConfig.BULLET_WIDTH;
             Bullet b1 = new Bullet(left, by, -GameConfig.PLAYER_BULLET_SPEED, Bullet.Side.PLAYER);
             Bullet b2 = new Bullet(right, by, -GameConfig.PLAYER_BULLET_SPEED, Bullet.Side.PLAYER);
-            if (piercing) {
-                b1.piercing();
-                b2.piercing();
-            }
+            if (piercing) { b1.piercing(); b2.piercing(); }
+            if (damageUp) { b1.withDamage(2); b2.withDamage(2); }
             out.add(b1);
             out.add(b2);
         } else {
             double bx = x + (GameConfig.PLAYER_WIDTH - GameConfig.BULLET_WIDTH) / 2.0;
             Bullet b = new Bullet(bx, by, -GameConfig.PLAYER_BULLET_SPEED, Bullet.Side.PLAYER);
             if (piercing) b.piercing();
+            if (damageUp) b.withDamage(2);
             out.add(b);
         }
         return out;
     }
 
     public Bullet fireCharged() {
-        fireCooldown = GameConfig.PLAYER_FIRE_COOLDOWN_TICKS;
+        fireCooldown = Math.max(2, (int) Math.round(GameConfig.PLAYER_FIRE_COOLDOWN_TICKS * cooldownMultiplier));
         double bx = x + (GameConfig.PLAYER_WIDTH - GameConfig.CHARGE_BULLET_WIDTH) / 2.0;
         double by = y - GameConfig.CHARGE_BULLET_HEIGHT;
         return new Bullet(bx, by, -GameConfig.PLAYER_BULLET_SPEED * 1.1, Bullet.Side.PLAYER)

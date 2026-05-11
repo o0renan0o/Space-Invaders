@@ -47,8 +47,6 @@ public final class Main {
         frame.setVisible(true);
         panel.requestFocusInWindow();
 
-        sounds.playMusic("music");
-
         GameLoop loop = new GameLoop(world, input, panel, sounds, GameConfig.TICK_RATE);
         loop.start();
     }

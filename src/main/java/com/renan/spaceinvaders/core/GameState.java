@@ -4,6 +4,7 @@ public enum GameState {
     MENU,
     DIFFICULTY_SELECT,
     HALL_OF_FAME,
+    SHOP,
     PLAYING,
     PAUSED,
     WAVE_CLEARED,

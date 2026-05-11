@@ -7,6 +7,7 @@ import com.renan.spaceinvaders.world.Boss;
 import com.renan.spaceinvaders.world.Bullet;
 import com.renan.spaceinvaders.world.Player;
 import com.renan.spaceinvaders.world.PowerUp;
+import com.renan.spaceinvaders.world.PowerUpType;
 import com.renan.spaceinvaders.world.Shield;
 import com.renan.spaceinvaders.world.Ufo;
 import com.renan.spaceinvaders.world.World;
@@ -25,12 +26,13 @@ public final class CollisionSystem {
         handleBulletsVsBoss(world, sounds);
         handleBulletsVsUfo(world, sounds);
         handleBulletsVsPlayer(world, sounds);
-        handlePlayerVsPowerUps(world);
+        handlePlayerVsPowerUps(world, sounds);
         handleAliensVsShields(world);
         handleAliensVsPlayer(world, sounds);
     }
 
     private static void handleBulletsVsShields(World world) {
+        boolean reflect = world.getActivePowerUps().isActive(PowerUpType.REFLECT);
         for (Bullet b : world.getBullets()) {
             if (!b.isAlive()) continue;
             Rectangle bb = b.getBounds();
@@ -38,6 +40,9 @@ public final class CollisionSystem {
                 if (s.handleHit(bb, b.getSide())) {
                     if (b.isSplittable()) {
                         world.onShieldHitBySplittable(b.getX(), b.getY());
+                    }
+                    if (reflect && b.getSide() == Bullet.Side.ALIEN) {
+                        world.spawnReflectedBullet(b.getX(), b.getY());
                     }
                     b.kill();
                     break;
@@ -105,10 +110,19 @@ public final class CollisionSystem {
     private static void handleBulletsVsPlayer(World world, SoundManager sounds) {
         Player player = world.getPlayer();
         if (player.isInvulnerable()) return;
+        boolean ghost = world.getActivePowerUps().isActive(PowerUpType.GHOST);
         Rectangle pb = player.getBounds();
         for (Bullet b : world.getBullets()) {
             if (!b.isAlive() || b.getSide() != Bullet.Side.ALIEN) continue;
             if (b.getBounds().intersects(pb)) {
+                if (ghost) {
+                    if (!b.isNearMissCredited()) {
+                        b.creditNearMiss();
+                        world.addPopup((int) b.getX(), (int) b.getY(), "GHOST",
+                                new java.awt.Color(0xCCFFFF));
+                    }
+                    continue;
+                }
                 b.kill();
                 if (player.hit()) {
                     world.onPlayerHit(sounds);
@@ -118,14 +132,14 @@ public final class CollisionSystem {
         }
     }
 
-    private static void handlePlayerVsPowerUps(World world) {
+    private static void handlePlayerVsPowerUps(World world, SoundManager sounds) {
         Player player = world.getPlayer();
         Rectangle pb = player.getBounds();
         for (PowerUp pu : world.getPowerUps()) {
             if (!pu.isAlive()) continue;
             if (pu.getBounds().intersects(pb)) {
                 pu.collect();
-                world.onPowerUpCollected(pu);
+                world.onPowerUpCollected(pu, sounds);
             }
         }
     }

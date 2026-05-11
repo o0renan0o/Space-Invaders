@@ -70,6 +70,11 @@ public final class GameConfig {
     public static final double POWERUP_FALL_SPEED = 2.0;
     public static final int POWERUP_SIZE = 26;
     public static final int POWERUP_DURATION_TICKS = 60 * 10;
+    public static final double MAGNET_PULL_SPEED = 5.5;
+    public static final int NUKE_SCORE_PER_KILL = 50;
+    public static final int COIN_PER_ALIEN = 1;
+    public static final int COIN_PER_UFO = 5;
+    public static final int COIN_PER_BOSS = 25;
     public static final int RAPID_FIRE_COOLDOWN = 6;
 
     public static final int[] SCORE_REWARD_THRESHOLDS = {1000, 2500, 5000, 10000, 25000};

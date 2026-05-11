@@ -362,6 +362,10 @@ public final class Renderer {
         for (int i = 0; i < Math.min(lives, 5); i++) {
             drawShip(g, x + 86 + i * (iconSize + 2), iconY, iconSize, iconSize / 2 + 1);
         }
+
+        g.setFont(smallFont);
+        g.setColor(new Color(255, 204, 51));
+        g.drawString("$" + world.getCoinsEarned(), x + w - 42, top + 36);
     }
 
     private void drawCockpitRegion(Graphics2D g, int x, int w, int top, int height) {
@@ -500,11 +504,12 @@ public final class Renderer {
         switch (state) {
             case MENU -> drawMenu(g);
             case HALL_OF_FAME -> drawHallOfFame(g);
+            case SHOP -> drawShop(g);
             case PAUSED -> drawCenter(g, "PAUSED", "Press P or ESC to resume   Q to quit");
             case WAVE_CLEARED -> drawCenter(g, "WAVE CLEARED!",
                     "+" + world.getCurrentPhase().clearBonus() + " bonus");
             case GAME_OVER -> drawCenter(g, "GAME OVER",
-                    "SCORE " + world.getScore() + "    Press ENTER");
+                    "SCORE " + world.getScore() + "    +" + world.getCoinsEarned() + " coins    Press ENTER");
             case ENTERING_INITIALS -> drawInitials(g);
             default -> {
             }
@@ -540,13 +545,15 @@ public final class Renderer {
                 "PAUSE     P or ESC",
                 "MUTE      M",
                 "HALL OF FAME    H",
+                "SHOP            S",
                 "",
                 "SCORING",
                 "Squid 30   Crab 20   Octopus 10",
                 "Armored 50   UFO 150   Boss 1000+",
                 "",
-                "POWER-UPS: 1UP, RAPID, DOUBLE,",
-                "PIERCE, SLOW-MO, SHIELD REPAIR"
+                "POWER-UPS: 1UP, RAPID, DOUBLE, PIERCE,",
+                "SLOW, SHIELD, DAMAGE, MAGNET, NUKE,",
+                "REFLECT, GHOST"
         };
         int y = 290;
         for (String line : lines) {
@@ -591,6 +598,77 @@ public final class Renderer {
         g.setFont(hudFont);
         g.setColor(CYAN);
         String hint = "Press ENTER to return";
+        int hw = g.getFontMetrics().stringWidth(hint);
+        g.drawString(hint, GameConfig.WIDTH / 2 - hw / 2, GameConfig.HEIGHT - 40);
+    }
+
+    private void drawShop(Graphics2D g) {
+        g.setColor(new Color(0, 0, 0, 210));
+        g.fillRect(0, 0, GameConfig.WIDTH, GameConfig.HEIGHT);
+
+        g.setFont(bigFont);
+        g.setColor(YELLOW);
+        String title = "ARMOURY";
+        int tw = g.getFontMetrics().stringWidth(title);
+        g.drawString(title, GameConfig.WIDTH / 2 - tw / 2, 80);
+
+        com.renan.spaceinvaders.meta.Profile profile = world.getProfile();
+        g.setFont(mediumFont);
+        g.setColor(new Color(0xFFCC33));
+        String coinLine = profile.getCoins() + " coins";
+        int cw = g.getFontMetrics().stringWidth(coinLine);
+        g.drawString(coinLine, GameConfig.WIDTH / 2 - cw / 2, 115);
+
+        g.setFont(hudFont);
+        g.setColor(new Color(160, 160, 200));
+        String earnedLine = "Total earned: " + profile.getTotalCoinsEarned();
+        int ew = g.getFontMetrics().stringWidth(earnedLine);
+        g.drawString(earnedLine, GameConfig.WIDTH / 2 - ew / 2, 138);
+
+        com.renan.spaceinvaders.meta.Upgrade[] upgrades = com.renan.spaceinvaders.meta.Upgrade.values();
+        int selected = world.getShopIndex();
+        int rowY = 180;
+        int rowH = 64;
+        int boxW = 560;
+        int boxX = (GameConfig.WIDTH - boxW) / 2;
+        for (int i = 0; i < upgrades.length; i++) {
+            com.renan.spaceinvaders.meta.Upgrade u = upgrades[i];
+            int level = profile.getLevel(u);
+            boolean maxed = level >= u.maxLevel;
+            int cost = maxed ? 0 : u.costAtLevel(level);
+            boolean canBuy = !maxed && profile.getCoins() >= cost;
+            boolean active = i == selected;
+
+            g.setColor(active ? new Color(50, 70, 120, 220) : new Color(20, 25, 50, 200));
+            g.fillRect(boxX, rowY, boxW, rowH - 8);
+            g.setColor(active ? YELLOW : new Color(60, 60, 90));
+            g.drawRect(boxX, rowY, boxW, rowH - 8);
+
+            g.setFont(hudFont);
+            g.setColor(active ? YELLOW : WHITE);
+            g.drawString(u.label, boxX + 14, rowY + 22);
+
+            g.setFont(smallFont);
+            g.setColor(new Color(180, 200, 230));
+            g.drawString(u.description, boxX + 14, rowY + 40);
+
+            g.setFont(hudFont);
+            String levelStr = "Lvl " + level + "/" + u.maxLevel;
+            int lw = g.getFontMetrics().stringWidth(levelStr);
+            g.setColor(WHITE);
+            g.drawString(levelStr, boxX + boxW - lw - 110, rowY + 22);
+
+            String costStr = maxed ? "MAX" : (cost + "c");
+            int xw = g.getFontMetrics().stringWidth(costStr);
+            g.setColor(maxed ? new Color(120, 200, 120) : canBuy ? new Color(0xFFCC33) : new Color(200, 80, 80));
+            g.drawString(costStr, boxX + boxW - xw - 14, rowY + 22);
+
+            rowY += rowH;
+        }
+
+        g.setFont(hudFont);
+        g.setColor(CYAN);
+        String hint = "UP/DOWN select   ENTER buy   ESC/S back";
         int hw = g.getFontMetrics().stringWidth(hint);
         g.drawString(hint, GameConfig.WIDTH / 2 - hw / 2, GameConfig.HEIGHT - 40);
     }

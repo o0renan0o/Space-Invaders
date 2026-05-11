@@ -19,8 +19,25 @@ public final class PowerUp implements Entity {
     }
 
     public void update() {
-        y += GameConfig.POWERUP_FALL_SPEED;
+        update(0, 0, false);
+    }
+
+    public void update(double playerCx, double playerCy, boolean magnetActive) {
         spinTick++;
+        if (magnetActive) {
+            double cx = x + GameConfig.POWERUP_SIZE / 2.0;
+            double cy = y + GameConfig.POWERUP_SIZE / 2.0;
+            double dx = playerCx - cx;
+            double dy = playerCy - cy;
+            double dist = Math.hypot(dx, dy);
+            if (dist > 1) {
+                double pull = GameConfig.MAGNET_PULL_SPEED;
+                x += dx / dist * pull;
+                y += dy / dist * pull;
+            }
+        } else {
+            y += GameConfig.POWERUP_FALL_SPEED;
+        }
         if (y > GameConfig.HEIGHT) alive = false;
     }
 

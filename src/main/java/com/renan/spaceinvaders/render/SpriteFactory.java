@@ -198,6 +198,61 @@ public final class SpriteFactory {
             "  ####"
     }, 8);
 
+    private static final String[] DAMAGE_ICON = pad(new String[]{
+            "   ##",
+            "  ####",
+            " ######",
+            "########",
+            "########",
+            "  ####",
+            " #    #",
+            "#      #"
+    }, 8);
+
+    private static final String[] MAGNET_ICON = pad(new String[]{
+            "###  ###",
+            "###  ###",
+            "###  ###",
+            "###  ###",
+            "########",
+            "########",
+            "##    ##",
+            "##    ##"
+    }, 8);
+
+    private static final String[] NUKE_ICON = pad(new String[]{
+            "  ####",
+            " ######",
+            "########",
+            "## ## ##",
+            "########",
+            "########",
+            " ######",
+            "  ####"
+    }, 8);
+
+    private static final String[] REFLECT_ICON = pad(new String[]{
+            "    #",
+            "   ##",
+            "  ###",
+            "######",
+            "  ###",
+            "   ##",
+            "    #",
+            "     "
+    }, 8);
+
+    private static final String[] GHOST_ICON = pad(new String[]{
+            "  ####",
+            " ######",
+            "## ## ##",
+            "########",
+            "########",
+            "########",
+            "# # # #",
+            " # # # "
+    }, 8);
+
     private SpriteFactory() {
     }
 
@@ -247,6 +302,11 @@ public final class SpriteFactory {
         map.put("pu_pierce", PixelArt.render(PIERCE, 3, new Color(0xFFFFFF)));
         map.put("pu_slow", PixelArt.render(CLOCK, 3, new Color(0xCCCCFF)));
         map.put("pu_shield", PixelArt.render(SHIELD_ICON, 3, new Color(0x66FF77)));
+        map.put("pu_damage", PixelArt.render(DAMAGE_ICON, 3, new Color(0xFF4422)));
+        map.put("pu_magnet", PixelArt.render(MAGNET_ICON, 3, new Color(0xCC66FF)));
+        map.put("pu_nuke", PixelArt.outlined(NUKE_ICON, 3, new Color(0xFFFFAA), new Color(0xFF8800)));
+        map.put("pu_reflect", PixelArt.render(REFLECT_ICON, 3, new Color(0x88DDFF)));
+        map.put("pu_ghost", PixelArt.render(GHOST_ICON, 3, new Color(0xCCFFFF)));
 
         return map;
     }
